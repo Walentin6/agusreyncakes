@@ -1,0 +1,1425 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admin · Agustina Reynoso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Caveat:wght@400;500;600&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --cream: #FAF5EF;
+    --cream-2: #F5EEE5;
+    --pink-1: #F7E2DE;
+    --pink-2: #F3D2CC;
+    --pink-3: #E9B6AE;
+    --rose:   #C97B7B;
+    --beige:  #E8D9C5;
+    --beige-d:#C9B5A0;
+    --ink:    #3D2E2A;
+    --ink-2:  #6B5953;
+    --ink-3:  #9A8880;
+    --line:   #E7DBCE;
+    --serif:  "Cormorant Garamond", "Times New Roman", serif;
+    --hand:   "Caveat", cursive;
+    --sans:   "Manrope", -apple-system, system-ui, sans-serif;
+    --mono:   "JetBrains Mono", ui-monospace, monospace;
+  }
+  *,*::before,*::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--cream); color: var(--ink); font-family: var(--sans); font-size: 14px; }
+  button { font-family: inherit; cursor: pointer; border: 0; background: none; }
+  input, textarea, select { font-family: inherit; font-size: 14px; }
+
+  .admin-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 32px 24px;
+    position: sticky; top: 0; height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  .sidebar-brand {
+    font-family: var(--serif); font-style: italic;
+    font-size: 28px; margin-bottom: 40px;
+  }
+  .sidebar-brand .dot { color: var(--rose); }
+  .sidebar-nav { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+  .sidebar-nav button {
+    color: rgba(250,245,239,.7);
+    padding: 12px 16px; border-radius: 8px;
+    text-align: left; font-size: 14px;
+    transition: all .2s; display: flex; align-items: center; gap: 10px;
+  }
+  .sidebar-nav button:hover, .sidebar-nav button.active {
+    background: rgba(250,245,239,.1);
+    color: var(--cream);
+  }
+  .sidebar-footer {
+    margin-top: auto;
+    padding-top: 24px;
+    border-top: 1px solid rgba(250,245,239,.12);
+    font-size: 12px; color: rgba(250,245,239,.5);
+  }
+
+  /* Main content */
+  .main {
+    padding: 40px 48px;
+    overflow-y: auto;
+  }
+  .main-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 32px;
+  }
+  .main-header h1 {
+    font-family: var(--serif); font-weight: 300;
+    font-size: 36px;
+  }
+
+  /* Stats cards */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+    margin-bottom: 40px;
+  }
+  .stat-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 24px;
+  }
+  .stat-card .label {
+    font-family: var(--mono); font-size: 11px;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-3); margin-bottom: 12px;
+  }
+  .stat-card .value {
+    font-family: var(--serif); font-style: italic;
+    font-size: 36px; color: var(--ink); line-height: 1;
+  }
+
+  /* Tables */
+  .data-table {
+    width: 100%; border-collapse: collapse;
+    background: #fff; border: 1px solid var(--line);
+    border-radius: 10px; overflow: hidden;
+  }
+  .data-table th {
+    background: var(--cream-2);
+    font-family: var(--mono); font-size: 11px;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink-3); font-weight: 500;
+    padding: 14px 20px; text-align: left;
+    border-bottom: 1px solid var(--line);
+  }
+  .data-table td {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-2);
+  }
+  .data-table tr:last-child td { border-bottom: 0; }
+  .data-table tr:hover td { background: var(--cream); }
+
+  /* Buttons */
+  .btn-sm {
+    padding: 8px 16px; border-radius: 6px;
+    font-size: 12px; letter-spacing: .04em;
+    font-weight: 500; transition: all .2s;
+  }
+  .btn-primary-sm { background: var(--ink); color: var(--cream); }
+  .btn-primary-sm:hover { background: var(--rose); }
+  .btn-ghost-sm { border: 1px solid var(--line); color: var(--ink-2); }
+  .btn-ghost-sm:hover { border-color: var(--rose); color: var(--rose); }
+  .btn-danger-sm { background: #FFEBEE; color: #C62828; }
+  .btn-danger-sm:hover { background: #EF9A9A; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(61,46,42,.4);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; padding: 20px;
+  }
+  .modal {
+    background: #fff;
+    border-radius: 12px;
+    width: 100%; max-width: 600px;
+    max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 24px 80px rgba(61,46,42,.2);
+  }
+  .modal-header {
+    padding: 24px 28px 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .modal-header h3 {
+    font-family: var(--serif); font-size: 24px; font-weight: 300;
+  }
+  .modal-body { padding: 24px 28px; }
+  .modal-footer {
+    padding: 16px 28px 24px;
+    display: flex; justify-content: flex-end; gap: 10px;
+  }
+  .form-group { margin-bottom: 20px; }
+  .form-group label {
+    display: block; font-size: 12px;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-3); margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .form-group input, .form-group textarea, .form-group select {
+    width: 100%; padding: 10px 14px;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: var(--cream); color: var(--ink);
+    outline: none; transition: border-color .2s;
+  }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+    border-color: var(--rose);
+  }
+  .form-group textarea { min-height: 120px; resize: vertical; }
+  .modal-content {
+    background: var(--cream);
+    border-radius: 12px;
+    width: 100%; max-width: 600px;
+    max-height: 90vh; overflow: hidden;
+    box-shadow: 0 24px 80px rgba(61,46,42,.2);
+  }
+  .modal-close {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid var(--line);
+    background: var(--cream);
+    color: var(--ink-2);
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .modal-close:hover { background: var(--pink-1); border-color: var(--pink-2); }
+  .btn-primary {
+    background: var(--ink); color: var(--cream);
+    padding: 10px 20px; border-radius: 999px;
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-primary:hover { background: var(--rose); }
+  .btn-ghost {
+    background: transparent; color: var(--ink);
+    padding: 10px 20px; border-radius: 999px;
+    border: 1px solid var(--line);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-ghost:hover { background: var(--pink-1); }
+
+  /* Loading */
+  .loading {
+    display: flex; align-items: center; justify-content: center;
+    padding: 80px; color: var(--ink-3);
+  }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .admin-layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .main { padding: 24px; }
+  }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid var(--line); }
+  .tab {
+    padding: 12px 20px;
+    font-size: 13px; color: var(--ink-3);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all .2s;
+  }
+  .tab.active { color: var(--ink); border-color: var(--rose); }
+  .tab:hover { color: var(--ink); }
+
+  /* PDF upload */
+  .pdf-upload-area {
+    border: 2px dashed var(--line);
+    border-radius: 10px;
+    padding: 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    background: var(--cream);
+  }
+  .pdf-upload-area:hover { border-color: var(--rose); background: var(--pink-1); }
+  .pdf-upload-area.has-file { border-color: #2E7D32; border-style: solid; background: #E8F5E9; }
+  .pdf-upload-area input[type="file"] { display: none; }
+  .pdf-icon { font-size: 32px; margin-bottom: 8px; }
+  .pdf-upload-area p { margin: 4px 0 0; font-size: 13px; color: var(--ink-3); }
+  .pdf-upload-area .filename { font-weight: 600; color: var(--ink); font-size: 14px; }
+  .pdf-upload-area .remove-pdf { margin-top: 10px; color: #C62828; font-size: 12px; }
+
+  /* Order detail modal */
+  .order-detail-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .order-detail-item:last-child { border-bottom: 0; }
+  .order-detail-item .recipe-name { font-weight: 500; color: var(--ink); }
+  .order-detail-item .pdf-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #2E7D32; background: #E8F5E9; padding: 3px 8px; border-radius: 4px; margin-left: 8px; }
+  .order-detail-item .no-pdf-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #EF6C00; background: #FFF3E0; padding: 3px 8px; border-radius: 4px; margin-left: 8px; }
+  .email-sent-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #1565C0; background: #E3F2FD; padding: 4px 10px; border-radius: 4px; margin-left: 8px; }
+
+  /* Resend button */
+  .btn-resend { background: #E3F2FD; color: #1565C0; }
+  .btn-resend:hover { background: #BBDEFB; }
+  .btn-resend:disabled { opacity: .5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+
+<div id="root"></div>
+
+<script type="text/babel">
+
+const { useState, useEffect } = React;
+
+const API_BASE = '';
+
+async function api(path, opts = {}) {
+  const res = await fetch(API_BASE + path, {
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...opts.headers },
+    ...opts
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+const ARS = n => "$" + (n || 0).toLocaleString("es-AR");
+
+/* ---------- Components ---------- */
+function Sidebar({ activeTab, setActiveTab }) {
+  const tabs = [
+    { id: 'dashboard', label: 'Dashboard', icon: '◈' },
+    { id: 'recipes', label: 'Recetas', icon: '✦' },
+    { id: 'combos', label: 'Combos', icon: '◫' },
+    { id: 'trash', label: 'Papelera', icon: '🗑' },
+    { id: 'orders', label: 'Pedidos', icon: '◉' },
+    { id: 'users', label: 'Usuarios', icon: '○' },
+  ];
+
+  return (
+    <aside className="sidebar">
+      <div className="sidebar-brand">agustina<span className="dot">.</span></div>
+      <nav>
+        <ul className="sidebar-nav">
+          {tabs.map(t => (
+            <li key={t.id}>
+              <button 
+                className={activeTab === t.id ? 'active' : ''}
+                onClick={() => setActiveTab(t.id)}
+              >
+                <span>{t.icon}</span> {t.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <div className="sidebar-footer">
+        <a href="/" style={{color: 'inherit'}}>← Volver al sitio</a>
+      </div>
+    </aside>
+  );
+}
+
+function Dashboard() {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api('/api/admin/stats')
+      .then(data => setStats(data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="loading">Cargando...</div>;
+
+  return (
+    <div>
+      <div className="main-header">
+        <h1>Dashboard</h1>
+      </div>
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="label">Recetas</div>
+          <div className="value">{stats?.stats?.recipes || 0}</div>
+          {stats?.stats?.trash > 0 && (
+            <div style={{marginTop: 8, fontSize: 12, color: 'var(--rose)'}}>
+              🗑 {stats.stats.trash} en papelera
+            </div>
+          )}
+        </div>
+        <div className="stat-card">
+          <div className="label">Usuarios</div>
+          <div className="value">{stats?.stats?.users || 0}</div>
+        </div>
+        <div className="stat-card">
+          <div className="label">Pedidos</div>
+          <div className="value">{stats?.stats?.orders || 0}</div>
+        </div>
+        <div className="stat-card">
+          <div className="label">Ingresos</div>
+          <div className="value">{ARS(stats?.stats?.revenue || 0)}</div>
+        </div>
+      </div>
+
+      <h2 style={{fontFamily: 'var(--serif)', fontWeight: 300, fontSize: 24, marginBottom: 20}}>Pedidos recientes</h2>
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Cliente</th>
+            <th>Items</th>
+            <th>Total</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(stats?.recentOrders || []).map(o => (
+            <tr key={o.id}>
+              <td>#{o.id}</td>
+              <td>{o.user_name || o.user_email || 'Anónimo'}</td>
+              <td>{o.item_count}</td>
+              <td>{ARS(o.total)}</td>
+              <td>
+                <span style={{
+                  padding: '4px 10px', borderRadius: 999,
+                  fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em',
+                  background: o.status === 'paid' ? '#E8F5E9' : o.status === 'pending' ? '#FFF3E0' : '#FFEBEE',
+                  color: o.status === 'paid' ? '#2E7D32' : o.status === 'pending' ? '#EF6C00' : '#C62828'
+                }}>
+                  {o.status}
+                </span>
+              </td>
+              <td>{new Date(o.created_at).toLocaleDateString('es-AR')}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function RecipeModal({ recipe, onClose, onSave }) {
+  const [form, setForm] = useState(recipe || {
+    title: '', category: 'Tortas', tag: 'nuevo', time: '1h', level: 'fácil',
+    price: 0, description: '', label: '', photo_tone: 'pink', images: [],
+    content: { ingredients: [], steps: [], tips: '' }
+  });
+  const [pdfFile, setPdfFile] = useState(null);
+  const [pdfRemoved, setPdfRemoved] = useState(false);
+  const [pdfPreview, setPdfPreview] = useState(recipe?.has_pdf ? 'PDF cargado' : null);
+  const [recipeImages, setRecipeImages] = useState(recipe?.images || []);
+  const [pendingImages, setPendingImages] = useState([]);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      alert('Solo se permiten archivos PDF');
+      return;
+    }
+    if (file.size > 25000000) {
+      alert('El PDF es demasiado grande (' + (file.size / 1024 / 1024).toFixed(1) + 'MB). El máximo es 25MB. Considerá comprimir el PDF.');
+      e.target.value = '';
+      return;
+    }
+    setPdfFile(file);
+    setPdfPreview(file.name);
+    setPdfRemoved(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const payload = { ...form };
+    if (pdfFile) {
+      const reader = new FileReader();
+      const base64 = await new Promise((resolve) => {
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.readAsDataURL(pdfFile);
+      });
+      payload.pdf_base64 = base64;
+    } else if (pdfRemoved) {
+      payload.pdf_base64 = null;
+    } else {
+      delete payload.pdf_base64;
+    }
+    if (!recipe?.id && pendingImages.length > 0) {
+      payload.images = pendingImages;
+    }
+    onSave(payload);
+  };
+
+  const removePdf = () => {
+    setPdfFile(null);
+    setPdfPreview(null);
+    setPdfRemoved(true);
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 25 * 1024 * 1024) {
+      alert('El archivo es muy grande. Máximo: 25MB.');
+      e.target.value = '';
+      return;
+    }
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm', 'video/quicktime'];
+    if (!allowed.includes(file.type)) {
+      alert('Formato no permitido. Usá JPG, PNG, WebP, GIF o MP4.');
+      e.target.value = '';
+      return;
+    }
+    const totalImages = recipeImages.length + pendingImages.length;
+    if (totalImages >= 5) {
+      alert('Máximo 5 imágenes por receta.');
+      e.target.value = '';
+      return;
+    }
+    setUploading(true);
+    try {
+      if (recipe?.id) {
+        const fd = new FormData();
+        fd.append('image', file);
+        const res = await fetch(`/api/recipes/${recipe.id}/images`, {
+          method: 'POST',
+          credentials: 'include',
+          body: fd
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al subir');
+        setRecipeImages(data.images);
+      } else {
+        const reader = new FileReader();
+        const base64 = await new Promise((resolve) => {
+          reader.onload = () => resolve(reader.result.split(',')[1]);
+          reader.readAsDataURL(file);
+        });
+        const previewUrl = reader.result;
+        setPendingImages([...pendingImages, { name: file.name, type: file.type, base64, previewUrl }]);
+      }
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handlePendingImageDelete = (index) => {
+    if (!confirm('¿Eliminar esta imagen?')) return;
+    setPendingImages(pendingImages.filter((_, i) => i !== index));
+  };
+
+  const handleImageDelete = async (index) => {
+    if (!recipe?.id) return;
+    if (!confirm('¿Eliminar esta imagen?')) return;
+    try {
+      const res = await fetch(`/api/recipes/${recipe.id}/images/${index}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al eliminar');
+      setRecipeImages(data.images);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  useEffect(() => {
+    if (recipe?.id && !recipeImages.length && recipe.images) {
+      try {
+        const imgs = JSON.parse(recipe.images);
+        if (Array.isArray(imgs)) setRecipeImages(imgs);
+      } catch {}
+    }
+  }, [recipe]);
+
+  const allImages = recipeImages.map((url, i) => ({ url, isPending: false, index: i }));
+  pendingImages.forEach((img, i) => {
+    allImages.push({ ...img, isPending: true, index: i });
+  });
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>{recipe ? 'Editar receta' : 'Nueva receta'}</h3>
+          <button className="btn-ghost-sm" onClick={onClose}>✕</button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body">
+            <div className="form-group">
+              <label>Título</label>
+              <input value={form.title} onChange={e => setForm({...form, title: e.target.value})} required />
+            </div>
+            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16}}>
+              <div className="form-group">
+                <label>Categoría</label>
+                <select value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
+                  <option>Tortas</option><option>Tartas</option><option>Macarons</option>
+                  <option>Petit fours</option><option>Cupcakes</option><option>Panadería</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Precio ($)</label>
+                <input type="number" value={form.price} onChange={e => setForm({...form, price: parseInt(e.target.value) || 0})} required />
+              </div>
+            </div>
+            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16}}>
+              <div className="form-group">
+                <label>Tag</label>
+                <input value={form.tag} onChange={e => setForm({...form, tag: e.target.value})} />
+              </div>
+              <div className="form-group">
+                <label>Tiempo</label>
+                <input value={form.time} onChange={e => setForm({...form, time: e.target.value})} />
+              </div>
+              <div className="form-group">
+                <label>Nivel</label>
+                <select value={form.level} onChange={e => setForm({...form, level: e.target.value})}>
+                  <option>fácil</option><option>intermedio</option><option>avanzado</option>
+                </select>
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Label (para la foto)</label>
+              <input value={form.label} onChange={e => setForm({...form, label: e.target.value})} />
+            </div>
+            <div className="form-group">
+              <label>Descripción</label>
+              <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+            </div>
+            <div className="form-group">
+              <label>Imágenes del catálogo (máx 5, 1MB c/u)</label>
+              {allImages.length > 0 && (
+                <div style={{display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10}}>
+                  {allImages.map((item, i) => {
+                    const url = item.url || item.previewUrl;
+                    const isVideo = url.match(/\.(mp4|webm|mov|quicktime)(\?.*)?$/i);
+                    return (
+                      <div key={`img-${item.isPending ? 'p' : 'r'}-${item.index}`} style={{position: 'relative', width: 80, height: 80}}>
+                        {isVideo ? (
+                          <video src={url} style={{width: 80, height: 80, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line)'}} muted playsInline />
+                        ) : (
+                          <img src={url} alt="" style={{width: 80, height: 80, objectFit: 'cover', borderRadius: 8, border: item.isPending ? '2px dashed var(--rose)' : '1px solid var(--line)'}} />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => item.isPending ? handlePendingImageDelete(item.index) : handleImageDelete(item.index)}
+                          style={{position: 'absolute', top: -8, right: -8, width: 20, height: 20, borderRadius: '50%', background: '#C62828', color: '#fff', fontSize: 12, lineHeight: '20px', textAlign: 'center', border: 0}}
+                        >✕</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {allImages.length < 5 && (
+                <label className="pdf-upload-area" style={{padding: 20}}>
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" onChange={handleImageUpload} disabled={uploading} />
+                  <div>
+                    <div style={{fontSize: 24, marginBottom: 6}}>📷</div>
+                    {uploading ? <p>Subiendo...</p> : <p>Click para subir imagen o video</p>}
+                    <p style={{fontSize: 11, marginTop: 4}}>JPG, PNG, WebP, MP4 · máximo 25MB</p>
+                  </div>
+                </label>
+              )}
+            </div>
+            <div className="form-group">
+              <label>PDF de la receta (se adjunta al email post-pago)</label>
+              <label className={`pdf-upload-area ${pdfPreview ? 'has-file' : ''}`}>
+                <input type="file" accept="application/pdf" onChange={handleFileChange} />
+                {pdfPreview ? (
+                  <div>
+                    <div className="pdf-icon">📄</div>
+                    <div className="filename">{pdfPreview}</div>
+                    <button type="button" className="remove-pdf" onClick={(e) => { e.preventDefault(); removePdf(); }}>✕ Quitar PDF</button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="pdf-icon">📎</div>
+                    <p>Click para subir PDF</p>
+                    <p style={{fontSize: 11, marginTop: 4}}>Solo PDF, máximo 25MB (Almacenado en R2)</p>
+                  </div>
+                )}
+              </label>
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn-ghost-sm" onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn-primary-sm">Guardar receta</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function RecipesAdmin() {
+  const [recipes, setRecipes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingRecipe, setEditingRecipe] = useState(null);
+
+  const loadRecipes = () => {
+    api('/api/admin/recipes')
+      .then(data => setRecipes(data.recipes || []))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadRecipes(); }, []);
+
+  const handleSave = async (recipe) => {
+    try {
+      if (recipe.id) {
+        await api(`/api/recipes/${recipe.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(recipe)
+        });
+      } else {
+        await api('/api/recipes', {
+          method: 'POST',
+          body: JSON.stringify(recipe)
+        });
+      }
+      setModalOpen(false);
+      setEditingRecipe(null);
+      loadRecipes();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('¿Eliminar esta receta?')) return;
+    try {
+      await api(`/api/recipes/${id}`, { method: 'DELETE' });
+      loadRecipes();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  };
+
+  if (loading) return <div className="loading">Cargando...</div>;
+
+  return (
+    <div>
+      <div className="main-header">
+        <h1>Recetas</h1>
+        <button className="btn-primary-sm" onClick={() => { setEditingRecipe(null); setModalOpen(true); }}>
+          + Nueva receta
+        </button>
+      </div>
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Título</th>
+            <th>Categoría</th>
+            <th>Precio</th>
+            <th>Tag</th>
+            <th>Imágenes</th>
+            <th>PDF</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {recipes.map(r => (
+            <tr key={r.id}>
+              <td>{r.id}</td>
+              <td style={{fontWeight: 500, color: 'var(--ink)'}}>{r.title}</td>
+              <td>{r.category}</td>
+              <td>{ARS(r.price)}</td>
+              <td>{r.tag}</td>
+              <td>
+                {(r.images_count || 0) > 0 ? (
+                  <span style={{color: '#2E7D32', fontSize: 13}}>📷 {r.images_count}</span>
+                ) : (
+                  <span style={{color: '#9A8880', fontSize: 12}}>Sin imágenes</span>
+                )}
+              </td>
+              <td>
+                {r.has_pdf ? (
+                  <span style={{color: '#2E7D32', fontSize: 13}}>📄 PDF</span>
+                ) : (
+                  <span style={{color: '#EF6C00', fontSize: 12}}>Sin PDF</span>
+                )}
+              </td>
+              <td>
+                <span style={{
+                  padding: '4px 10px', borderRadius: 999, fontSize: 11,
+                  background: r.published ? '#E8F5E9' : '#FFEBEE',
+                  color: r.published ? '#2E7D32' : '#C62828'
+                }}>
+                  {r.published ? 'Publicada' : 'Oculta'}
+                </span>
+              </td>
+              <td>
+                <div style={{display: 'flex', gap: 6}}>
+                  <button className="btn-ghost-sm" onClick={() => { setEditingRecipe(r); setModalOpen(true); }}>Editar</button>
+                  <button className="btn-danger-sm" onClick={() => handleDelete(r.id)}>Eliminar</button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {modalOpen && (
+        <RecipeModal
+          recipe={editingRecipe}
+          onClose={() => setModalOpen(false)}
+          onSave={handleSave}
+        />
+      )}
+    </div>
+  );
+}
+
+function TrashCan() {
+  const [recipes, setRecipes] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadTrash = () => {
+    setLoading(true);
+    api('/api/admin/trash')
+      .then(data => setRecipes(data.recipes || []))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadTrash(); }, []);
+
+  const handleRestore = async (id) => {
+    try {
+      await api(`/api/recipes/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ action: 'restore' })
+      });
+      loadTrash();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  };
+
+  const handlePermanentDelete = async (id) => {
+    if (!confirm('¿Eliminar permanentemente? Esta acción no se puede deshacer.')) return;
+    if (!confirm('¿Estás segura? Los pedidos anteriores que incluyan esta receta podrían verse afectados.')) return;
+    try {
+      await api(`/api/recipes/${id}?permanent=true`, { method: 'DELETE' });
+      loadTrash();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  };
+
+  if (loading) return <div className="loading">Cargando...</div>;
+
+  return (
+    <div>
+      <div className="main-header">
+        <h1>Papelera</h1>
+      </div>
+      {recipes.length === 0 ? (
+        <div style={{textAlign: 'center', padding: 60, color: 'var(--ink-3)'}}>
+          <div style={{fontSize: 48, marginBottom: 16}}>🗑</div>
+          <p style={{fontSize: 16}}>La papelera está vacía</p>
+        </div>
+      ) : (
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Título</th>
+              <th>Categoría</th>
+              <th>Precio</th>
+              <th>Eliminada</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recipes.map(r => (
+              <tr key={r.id}>
+                <td>{r.id}</td>
+                <td style={{fontWeight: 500, color: 'var(--ink)', textDecoration: 'line-through', opacity: .6}}>{r.title}</td>
+                <td>{r.category}</td>
+                <td>{ARS(r.price)}</td>
+                <td>
+                  <span style={{fontSize: 12, color: 'var(--ink-3)'}}>
+                    {new Date(r.deleted_at).toLocaleDateString('es-AR')}
+                  </span>
+                </td>
+                <td>
+                  <div style={{display: 'flex', gap: 6}}>
+                    <button className="btn-primary-sm" onClick={() => handleRestore(r.id)}>Restaurar</button>
+                    <button className="btn-danger-sm" onClick={() => handlePermanentDelete(r.id)}>Eliminar</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+function OrderDetailModal({ order, onClose, onResend }) {
+  const [orderItems, setOrderItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    api(`/api/orders/${order.id}/items`)
+      .then(data => setOrderItems(data.items || []))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [order.id]);
+
+  const handleResend = async () => {
+    setSending(true);
+    try {
+      await onResend(order.id);
+    } catch (err) {
+      alert('Error: ' + err.message);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: 500}}>
+        <div className="modal-header">
+          <h3>Pedido #{order.id}</h3>
+          <button className="btn-ghost-sm" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <div style={{marginBottom: 16, fontSize: 14, color: 'var(--ink-2)'}}>
+            <strong>{order.user_name || 'Sin nombre'}</strong> · {order.user_email}
+          </div>
+          <div style={{marginBottom: 16, fontSize: 13}}>
+            <span style={{
+              padding: '4px 10px', borderRadius: 999, fontSize: 11, textTransform: 'uppercase',
+              background: order.status === 'paid' ? '#E8F5E9' : order.status === 'pending' ? '#FFF3E0' : '#FFEBEE',
+              color: order.status === 'paid' ? '#2E7D32' : order.status === 'pending' ? '#EF6C00' : '#C62828'
+            }}>
+              {order.status}
+            </span>
+            {order.email_sent_at && (
+              <span className="email-sent-badge">✓ Email enviado</span>
+            )}
+          </div>
+          {loading ? (
+            <div style={{color: 'var(--ink-3)', textAlign: 'center', padding: 20}}>Cargando...</div>
+          ) : orderItems.length === 0 ? (
+            <div style={{color: 'var(--ink-3)', textAlign: 'center', padding: 20}}>Sin items</div>
+          ) : (
+            <div>
+              {orderItems.map(item => (
+                <div key={item.id} className="order-detail-item">
+                  <div>
+                    <div className="recipe-name">{item.recipe_title || 'Receta'}</div>
+                    <div style={{fontSize: 12, color: 'var(--ink-3)', marginTop: 2}}>
+                      ${item.price?.toLocaleString('es-AR')}
+                    </div>
+                  </div>
+                  <div>
+                    {item.has_pdf ? (
+                      <span className="pdf-badge">📄 PDF listo</span>
+                    ) : (
+                      <span className="no-pdf-badge">⚠️ Sin PDF</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="modal-footer" style={{justifyContent: 'space-between'}}>
+          <div style={{fontSize: 14, fontFamily: 'var(--serif)', fontStyle: 'italic', color: 'var(--ink)'}}>
+            Total: {ARS(order.total)}
+          </div>
+          <button
+            className="btn-resend btn-sm"
+            onClick={handleResend}
+            disabled={sending || order.status !== 'paid'}
+          >
+            {sending ? 'Enviando...' : '↻ Reenviar recetas'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CombosPanel() {
+  const [combos, setCombos] = useState([]);
+  const [recipes, setRecipes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingCombo, setEditingCombo] = useState(null);
+
+  const loadData = () => {
+    setLoading(true);
+    Promise.all([
+      api('/api/admin/combos'),
+      api('/api/recipes')
+    ])
+      .then(([combosData, recipesData]) => {
+        setCombos(combosData.combos || []);
+        setRecipes(recipesData.recipes || []);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const handleSave = async (combo) => {
+    try {
+      const method = combo.id ? 'PUT' : 'POST';
+      const body = combo.id ? combo : { ...combo };
+      if (combo.id) body.id = combo.id;
+      await api('/api/admin/combos', { method, body: JSON.stringify(body) });
+      setModalOpen(false);
+      setEditingCombo(null);
+      loadData();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('¿Eliminar este combo?')) return;
+    try {
+      await api(`/api/admin/combos?id=${id}`, { method: 'DELETE' });
+      loadData();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  };
+
+  const handleTogglePublished = async (combo) => {
+    try {
+      await api('/api/admin/combos', {
+        method: 'PUT',
+        body: JSON.stringify({ id: combo.id, published: combo.published ? 0 : 1 })
+      });
+      loadData();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  };
+
+  if (loading) return <div className="loading">Cargando...</div>;
+
+  return (
+    <div>
+      <div className="main-header">
+        <h1>Combos de Temporada</h1>
+        <button className="btn-primary-sm" onClick={() => { setEditingCombo(null); setModalOpen(true); }}>
+          + Nuevo combo
+        </button>
+      </div>
+      {combos.length === 0 ? (
+        <div style={{textAlign: 'center', padding: 60, color: 'var(--ink-3)'}}>
+          <p>No hay combos creados</p>
+          <p style={{fontSize: 13}}>Creá un combo para que aparezca en la página principal</p>
+        </div>
+      ) : (
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Título</th>
+              <th>Precio original</th>
+              <th>Precio final</th>
+              <th>Descuento</th>
+              <th>Recetas</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {combos.map(c => (
+              <tr key={c.id}>
+                <td>{c.id}</td>
+                <td style={{fontWeight: 500, color: 'var(--ink)'}}>{c.title}</td>
+                <td>{ARS(c.original_price)}</td>
+                <td>{ARS(c.final_price)}</td>
+                <td>{c.discount_percent}%</td>
+                <td>{c.recipes?.length || 0}</td>
+                <td>
+                  <button
+                    onClick={() => handleTogglePublished(c)}
+                    style={{
+                      padding: '4px 10px', borderRadius: 999, fontSize: 11, cursor: 'pointer',
+                      background: c.published ? '#E8F5E9' : '#FFEBEE',
+                      color: c.published ? '#2E7D32' : '#C62828',
+                      border: 'none'
+                    }}
+                  >
+                    {c.published ? 'Publicado' : 'Oculto'}
+                  </button>
+                </td>
+                <td>
+                  <div style={{display: 'flex', gap: 6}}>
+                    <button className="btn-ghost-sm" onClick={() => { setEditingCombo(c); setModalOpen(true); }}>Editar</button>
+                    <button className="btn-danger-sm" onClick={() => handleDelete(c.id)}>Eliminar</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {modalOpen && (
+        <ComboModal
+          combo={editingCombo}
+          recipes={recipes}
+          onClose={() => { setModalOpen(false); setEditingCombo(null); }}
+          onSave={handleSave}
+        />
+      )}
+    </div>
+  );
+}
+
+function ComboModal({ combo, recipes, onClose, onSave }) {
+  const [title, setTitle] = useState(combo?.title || '');
+  const [description, setDescription] = useState(combo?.description || '');
+  const [eyebrow, setEyebrow] = useState(combo?.eyebrow || 'combo de temporada');
+  const [features, setFeatures] = useState(combo?.features?.join('\n') || '');
+  const [selectedRecipes, setSelectedRecipes] = useState(combo?.recipes || []);
+  const [originalPrice, setOriginalPrice] = useState(combo?.original_price || 0);
+  const [finalPrice, setFinalPrice] = useState(combo?.final_price || 0);
+  const [discountPercent, setDiscountPercent] = useState(combo?.discount_percent || 0);
+  const [published, setPublished] = useState(combo?.published !== 0);
+
+  useEffect(() => {
+    const total = selectedRecipes.reduce((sum, r) => {
+      const recipe = recipes.find(rec => rec.id === r.id);
+      return sum + (recipe?.price || 0);
+    }, 0);
+    setOriginalPrice(total);
+    const discount = total * (discountPercent / 100);
+    setFinalPrice(total - discount);
+  }, [selectedRecipes, discountPercent, recipes]);
+
+  const toggleRecipe = (recipe) => {
+    const exists = selectedRecipes.find(r => r.id === recipe.id);
+    if (exists) {
+      setSelectedRecipes(selectedRecipes.filter(r => r.id !== recipe.id));
+    } else {
+      setSelectedRecipes([...selectedRecipes, { id: recipe.id, title: recipe.title }]);
+    }
+  };
+
+  const handleSave = () => {
+    const featuresArray = features.split('\n').filter(f => f.trim());
+    onSave({
+      id: combo?.id,
+      title,
+      description,
+      eyebrow,
+      features: featuresArray,
+      recipes: selectedRecipes,
+      original_price: originalPrice,
+      final_price: finalPrice,
+      discount_percent: discountPercent,
+      published: published ? 1 : 0
+    });
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()} style={{maxWidth: 700}}>
+        <div className="modal-header">
+          <h2>{combo ? 'Editar combo' : 'Nuevo combo'}</h2>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body" style={{maxHeight: '70vh', overflowY: 'auto'}}>
+          <div className="form-group">
+            <label>Título</label>
+            <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Ej: Combo Otoño · 6 recetas" style={{width: '100%', padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 14}} />
+          </div>
+          <div className="form-group">
+            <label>Eyebrow (texto pequeño)</label>
+            <input type="text" value={eyebrow} onChange={e => setEyebrow(e.target.value)} placeholder="combo de temporada" style={{width: '100%', padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 14}} />
+          </div>
+          <div className="form-group">
+            <label>Descripción</label>
+            <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Descripción del combo..." style={{width: '100%', padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 14, minHeight: 80}} />
+          </div>
+          <div className="form-group">
+            <label>Features (uno por línea)</label>
+            <textarea value={features} onChange={e => setFeatures(e.target.value)} placeholder="6 recetas en PDF ilustrado&#10;Lista de mercado descargable&#10;Acceso al grupo privado" style={{width: '100%', padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 14, minHeight: 100}} />
+          </div>
+          <div className="form-group">
+            <label>Seleccionar recetas ({selectedRecipes.length} seleccionadas)</label>
+            <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, maxHeight: 200, overflowY: 'auto', padding: 10, border: '1px solid var(--line)', borderRadius: 6}}>
+              {recipes.map(r => {
+                const selected = selectedRecipes.some(sr => sr.id === r.id);
+                return (
+                  <label key={r.id} style={{display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 4, background: selected ? 'var(--pink-1)' : 'transparent', cursor: 'pointer', fontSize: 13}}>
+                    <input type="checkbox" checked={selected} onChange={() => toggleRecipe(r)} />
+                    <span style={{flex: 1}}>{r.title}</span>
+                    <span style={{color: 'var(--ink-3)', fontSize: 12}}>{ARS(r.price)}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+          <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16}}>
+            <div className="form-group">
+              <label>Precio original</label>
+              <input type="number" value={originalPrice} readOnly style={{width: '100%', padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 14, background: 'var(--cream-2)'}} />
+            </div>
+            <div className="form-group">
+              <label>Descuento %</label>
+              <input type="number" value={discountPercent} onChange={e => setDiscountPercent(Number(e.target.value))} min={0} max={100} style={{width: '100%', padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 14}} />
+            </div>
+            <div className="form-group">
+              <label>Precio final</label>
+              <input type="number" value={finalPrice} onChange={e => setFinalPrice(Number(e.target.value))} style={{width: '100%', padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 14}} />
+            </div>
+          </div>
+          <div className="form-group">
+            <label style={{display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer'}}>
+              <input type="checkbox" checked={published} onChange={e => setPublished(e.target.checked)} />
+              <span>Publicado (visible en la página principal)</span>
+            </label>
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn-ghost" onClick={onClose}>Cancelar</button>
+          <button className="btn-primary" onClick={handleSave}>Guardar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OrdersAdmin() {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [detailOrder, setDetailOrder] = useState(null);
+
+  const loadOrders = () => {
+    const url = statusFilter ? `/api/admin/orders?status=${statusFilter}` : '/api/admin/orders';
+    api(url)
+      .then(data => setOrders(data.orders || []))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  };
+
+  const handleResend = async (orderId) => {
+    await api('/api/orders/send-recipe', {
+      method: 'POST',
+      body: JSON.stringify({ orderId })
+    });
+    alert('Email reenviado');
+    loadOrders();
+  };
+
+  useEffect(() => { loadOrders(); }, [statusFilter]);
+
+  if (loading) return <div className="loading">Cargando...</div>;
+
+  return (
+    <div>
+      <div className="main-header">
+        <h1>Pedidos</h1>
+        <select
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          style={{padding: '8px 14px', borderRadius: 8, border: '1px solid var(--line)', background: '#fff'}}
+        >
+          <option value="">Todos los estados</option>
+          <option value="pending">Pendiente</option>
+          <option value="paid">Pagado</option>
+          <option value="failed">Fallido</option>
+        </select>
+      </div>
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Cliente</th>
+            <th>Email</th>
+            <th>Items</th>
+            <th>Total</th>
+            <th>Estado</th>
+            <th>Email</th>
+            <th>Fecha</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map(o => (
+            <tr key={o.id}>
+              <td>#{o.id}</td>
+              <td>{o.user_name || 'Anónimo'}</td>
+              <td>{o.user_email || '-'}</td>
+              <td>{o.item_count}</td>
+              <td>{ARS(o.total)}</td>
+              <td>
+                <span style={{
+                  padding: '4px 10px', borderRadius: 999,
+                  fontSize: 11, textTransform: 'uppercase',
+                  background: o.status === 'paid' ? '#E8F5E9' : o.status === 'pending' ? '#FFF3E0' : '#FFEBEE',
+                  color: o.status === 'paid' ? '#2E7D32' : o.status === 'pending' ? '#EF6C00' : '#C62828'
+                }}>
+                  {o.status}
+                </span>
+              </td>
+              <td>
+                {o.email_sent_at ? (
+                  <span style={{color: '#2E7D32', fontSize: 12}}>✓ Enviado</span>
+                ) : (
+                  <span style={{color: '#9A8880', fontSize: 12}}>—</span>
+                )}
+              </td>
+              <td>{new Date(o.created_at).toLocaleDateString('es-AR')}</td>
+              <td>
+                <div style={{display: 'flex', gap: 6}}>
+                  <button className="btn-ghost-sm" onClick={() => setDetailOrder(o)}>Ver</button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {detailOrder && (
+        <OrderDetailModal
+          order={detailOrder}
+          onClose={() => setDetailOrder(null)}
+          onResend={handleResend}
+        />
+      )}
+    </div>
+  );
+}
+
+function UsersAdmin() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api('/api/admin/users')
+      .then(data => setUsers(data.users || []))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="loading">Cargando...</div>;
+
+  return (
+    <div>
+      <div className="main-header">
+        <h1>Usuarios</h1>
+      </div>
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Pedidos</th>
+            <th>Rol</th>
+            <th>Registro</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map(u => (
+            <tr key={u.id}>
+              <td>{u.id}</td>
+              <td style={{display: 'flex', alignItems: 'center', gap: 10}}>
+                {u.picture && <img src={u.picture} alt="" style={{width: 32, height: 32, borderRadius: '50%'}} />}
+                {u.name || 'Sin nombre'}
+              </td>
+              <td>{u.email}</td>
+              <td>{u.order_count}</td>
+              <td>
+                <span style={{
+                  padding: '4px 10px', borderRadius: 999, fontSize: 11,
+                  background: u.is_admin ? '#E3F2FD' : '#F5F5F5',
+                  color: u.is_admin ? '#1565C0' : '#616161'
+                }}>
+                  {u.is_admin ? 'Admin' : 'Cliente'}
+                </span>
+              </td>
+              <td>{new Date(u.created_at).toLocaleDateString('es-AR')}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* ---------- Main App ---------- */
+function App() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api('/api/auth/me')
+      .then(data => {
+        if (data.user && data.user.isAdmin) {
+          setUser(data.user);
+        } else {
+          window.location.href = '/';
+        }
+      })
+      .catch(() => {
+        window.location.href = '/';
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="loading">Verificando acceso...</div>;
+  if (!user) return null;
+
+  return (
+    <div className="admin-layout">
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <main className="main">
+        {activeTab === 'dashboard' && <Dashboard />}
+        {activeTab === 'recipes' && <RecipesAdmin />}
+        {activeTab === 'combos' && <CombosPanel />}
+        {activeTab === 'trash' && <TrashCan />}
+        {activeTab === 'orders' && <OrdersAdmin />}
+        {activeTab === 'users' && <UsersAdmin />}
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
+</script>
+</body>
+</html>

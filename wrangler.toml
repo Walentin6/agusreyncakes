@@ -1,0 +1,39 @@
+name = "agusreyncakes"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "agusreyncakes_db"
+database_id = "5c301503-a78b-474c-b1de-53feb95ddc92"
+
+# KV Namespace for sessions
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "cbd1293307a14144a256ffac6a8b0c9e"
+
+[vars]
+# Estas variables se sobreescriben en el dashboard de Cloudflare
+GOOGLE_CLIENT_ID = ""
+GOOGLE_CLIENT_SECRET = ""
+MP_ACCESS_TOKEN = ""
+MP_PUBLIC_KEY = ""
+ADMIN_EMAIL = ""
+SITE_URL = "http://localhost:8788"
+
+# R2 bucket for recipe images (free tier: 10GB storage, 100K writes, 1M reads/month)
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "agusreyncakes-images"
+
+# R2 bucket for PDF recipes (allows larger PDF files)
+[[r2_buckets]]
+binding = "PDF_BUCKET"
+bucket_name = "agusreyncakes-pdfs"
+
+# Variables de entorno sensibles (configurar en Cloudflare Dashboard)
+# RESEND_API_KEY = ""           # API key de Resend (para enviar emails con PDFs)
+# RESEND_FROM_EMAIL = ""        # Email origen para Resend (ej: "Agustina <noreply@tudominio.com>")
+# MP_ACCESS_TOKEN = ""          # Access token de Mercado Pago
+# MP_PUBLIC_KEY = ""            # Public key de Mercado Pago
