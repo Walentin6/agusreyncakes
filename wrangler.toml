@@ -17,7 +17,6 @@ id = "cbd1293307a14144a256ffac6a8b0c9e"
 [vars]
 # Estas variables se sobreescriben en el dashboard de Cloudflare
 GOOGLE_CLIENT_ID = "908978948369-sr88712rphu9p610hgvam3gip4295dtj.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = ""
 MP_ACCESS_TOKEN = ""
 MP_PUBLIC_KEY = ""
 ADMIN_EMAIL = ""
