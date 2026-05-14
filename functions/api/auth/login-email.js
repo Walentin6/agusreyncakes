@@ -1,6 +1,6 @@
 // Email Login
 import { createSession, setCookie, jsonResponse } from '../../utils.js';
-import bcrypt from 'bcryptjs';
+import { verifyPassword } from '../../utils/password.js';
 
 export async function onRequestPost(context) {
   const { env, request } = context;
@@ -24,7 +24,7 @@ export async function onRequestPost(context) {
       return jsonResponse({ error: 'Esta cuenta no tiene contraseña. Iniciá sesión con Google.' }, 401);
     }
 
-    const passwordValid = bcrypt.compareSync(password, user.password_hash);
+    const passwordValid = await verifyPassword(password, user.password_hash);
 
     if (!passwordValid) {
       return jsonResponse({ error: 'Credenciales inválidas' }, 401);

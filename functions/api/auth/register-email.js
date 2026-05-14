@@ -1,8 +1,6 @@
 // Email Registration
 import { createSession, setCookie, jsonResponse } from '../../utils.js';
-import bcrypt from 'bcryptjs';
-
-const BCRYPT_ROUNDS = 10;
+import { hashPassword } from '../../utils/password.js';
 
 export async function onRequestPost(context) {
   const { env, request } = context;
@@ -31,7 +29,7 @@ export async function onRequestPost(context) {
       return jsonResponse({ error: 'Ya existe una cuenta con este email' }, 409);
     }
 
-    const passwordHash = bcrypt.hashSync(password, BCRYPT_ROUNDS);
+    const passwordHash = await hashPassword(password);
 
     const userCount = await env.DB.prepare('SELECT COUNT(*) as count FROM users').first();
     const isAdmin = userCount.count === 0 ? 1 : 0;

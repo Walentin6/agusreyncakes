@@ -1,8 +1,6 @@
 // Reset Password - Set new password using token
 import { jsonResponse } from '../../utils.js';
-import bcrypt from 'bcryptjs';
-
-const BCRYPT_ROUNDS = 10;
+import { hashPassword } from '../../utils/password.js';
 
 export async function onRequestPost(context) {
   const { env, request } = context;
@@ -26,7 +24,7 @@ export async function onRequestPost(context) {
       return jsonResponse({ error: 'Token inválido o expirado' }, 400);
     }
 
-    const passwordHash = bcrypt.hashSync(password, BCRYPT_ROUNDS);
+    const passwordHash = await hashPassword(password);
 
     await env.DB.prepare(
       'UPDATE users SET password_hash = ? WHERE id = ?'
