@@ -152,7 +152,7 @@ function buildRecipeEmailHtml(order, recipesWithPdf, recipesWithoutPdf) {
     </div>
     <h1>¡Gracias por tu compra! ✿</h1>
     <p>Hola ${order.user_name || 'allí'},</p>
-    <p>Tu pedido #${order.id} fue confirmado. Encontrás tus recetas adjuntas en este email.</p>
+    <p>Tu pedido fue confirmado. Encontrás tus recetas adjuntas en este email.</p>
 
     ${recipesWithPdf.length > 0 ? `
     <div class="recipes">
@@ -173,7 +173,7 @@ function buildRecipeEmailHtml(order, recipesWithPdf, recipesWithoutPdf) {
     </div>
     ` : ''}
 
-    <p style="margin-top: 24px;">¿Dudas? Respondé este email o escribile a @agusreyncakes en Instagram ✿</p>
+    <p style="margin-top: 24px;">¿Dudas? Escribile a @agusreyncakes en Instagram ✿</p>
 
     <div class="footer">
       agustina reynoso · recetas de autora<br/>
@@ -250,7 +250,7 @@ export async function sendRecipeEmail(env, orderId) {
   const payload = {
     from: fromEmail,
     to: [order.user_email],
-    subject: `Tu pedido #${order.id} está listo ✿ agustina reynoso`,
+    subject: `Tu pedido está listo ✿ agustina reynoso`,
     html: htmlBody,
     ...(attachments.length > 0 ? { attachments } : {})
   };
