@@ -1,15 +1,26 @@
-// Get order items for a specific order (admin view — no full pdf_base64)
+// Get order items for a specific order (users can view their own, admins can view any)
 import { jsonResponse } from '../../../utils.js';
 
 export async function onRequestGet(context) {
   const { env, data, params } = context;
 
-  if (!data.session || !data.session.isAdmin) {
-    return jsonResponse({ error: 'Unauthorized' }, 403);
+  if (!data.session) {
+    return jsonResponse({ error: 'Unauthorized' }, 401);
   }
 
   try {
     const orderId = params.id;
+
+    // Verify ownership: non-admin users can only view their own orders
+    if (!data.session.isAdmin) {
+      const order = await env.DB.prepare(
+        'SELECT id FROM orders WHERE id = ? AND user_id = ?'
+      ).bind(orderId, data.session.userId).first();
+
+      if (!order) {
+        return jsonResponse({ error: 'Order not found' }, 404);
+      }
+    }
 
     const items = await env.DB.prepare(
       `SELECT oi.id, oi.order_id, oi.recipe_id, oi.recipe_title, oi.price,

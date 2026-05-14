@@ -138,6 +138,26 @@ export async function onRequestDelete(context) {
     const permanent = url.searchParams.get('permanent') === 'true';
 
     if (permanent) {
+      const recipe = await env.DB.prepare('SELECT * FROM recipes WHERE id = ?').bind(id).first();
+      
+      if (recipe) {
+        if (recipe.images) {
+          try {
+            const images = JSON.parse(recipe.images);
+            for (const imgUrl of images) {
+              if (imgUrl && imgUrl.includes('/images/')) {
+                const filename = imgUrl.split('/images/')[1];
+                try { await env.IMAGES.delete(filename); } catch (e) { /* ignore */ }
+              }
+            }
+          } catch (e) { /* ignore parse error */ }
+        }
+
+        if (env.PDF_BUCKET && recipe.pdf_base64 === 'R2_STORED') {
+          try { await env.PDF_BUCKET.delete(`recipe_pdfs/${id}.txt`); } catch (e) { /* ignore */ }
+        }
+      }
+
       await env.DB.prepare('DELETE FROM recipes WHERE id = ?').bind(id).run();
       return jsonResponse({ success: true });
     }

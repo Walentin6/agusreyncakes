@@ -173,7 +173,7 @@ function buildRecipeEmailHtml(order, recipesWithPdf, recipesWithoutPdf) {
     </div>
     ` : ''}
 
-    <p style="margin-top: 24px;">¿Dudas? Respondé este email o escribile a @agustina.reynoso en Instagram ✿</p>
+    <p style="margin-top: 24px;">¿Dudas? Respondé este email o escribile a @agusreyncakes en Instagram ✿</p>
 
     <div class="footer">
       agustina reynoso · recetas de autora<br/>

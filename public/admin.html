@@ -310,6 +310,7 @@ function Sidebar({ activeTab, setActiveTab }) {
     { id: 'trash', label: 'Papelera', icon: '🗑' },
     { id: 'orders', label: 'Pedidos', icon: '◉' },
     { id: 'users', label: 'Usuarios', icon: '○' },
+    { id: 'settings', label: 'Configuración', icon: '⚙' },
   ];
 
   return (
@@ -559,7 +560,7 @@ function RecipeModal({ recipe, onClose, onSave }) {
   });
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget && !window.getSelection().toString()) onClose(); }}>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3>{recipe ? 'Editar receta' : 'Nueva receta'}</h3>
@@ -907,7 +908,7 @@ function OrderDetailModal({ order, onClose, onResend }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget && !window.getSelection().toString()) onClose(); }}>
       <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth: 500}}>
         <div className="modal-header">
           <h3>Pedido #{order.id}</h3>
@@ -1152,7 +1153,7 @@ function ComboModal({ combo, recipes, onClose, onSave }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget && !window.getSelection().toString()) onClose(); }}>
       <div className="modal-content" onClick={e => e.stopPropagation()} style={{maxWidth: 700}}>
         <div className="modal-header">
           <h2>{combo ? 'Editar combo' : 'Nuevo combo'}</h2>
@@ -1379,6 +1380,149 @@ function UsersAdmin() {
   );
 }
 
+function SettingsAdmin() {
+  const [settings, setSettings] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [preview, setPreview] = useState(null);
+
+  useEffect(() => {
+    api('/api/admin/settings')
+      .then(data => {
+        setSettings(data.settings || {});
+        setPreview(data.settings?.hero_image_url || '/uploads/tarta.jpg');
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('El archivo es muy grande. Máximo 5MB.');
+      return;
+    }
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowed.includes(file.type)) {
+      alert('Tipo no permitido. Usá JPG, PNG o WebP.');
+      return;
+    }
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('image', file);
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        credentials: 'include',
+        body: fd
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al subir');
+      setSettings(prev => ({ ...prev, hero_image_url: data.url }));
+      setPreview(data.url);
+      alert('Imagen actualizada correctamente');
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleResetToDefault = async () => {
+    if (!confirm('¿Restablecer la imagen por defecto?')) return;
+    setSaving(true);
+    try {
+      await api('/api/admin/settings', {
+        method: 'PUT',
+        body: JSON.stringify({ settings: { hero_image_url: '/uploads/tarta.jpg' } })
+      });
+      setSettings(prev => ({ ...prev, hero_image_url: '/uploads/tarta.jpg' }));
+      setPreview('/uploads/tarta.jpg');
+      alert('Imagen restablecida');
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div className="loading">Cargando...</div>;
+
+  return (
+    <div>
+      <div className="main-header">
+        <h1>Configuración del sitio</h1>
+      </div>
+
+      <div style={{background: '#fff', border: '1px solid var(--line)', borderRadius: 10, padding: 28, maxWidth: 600}}>
+        <h3 style={{fontFamily: 'var(--serif)', fontWeight: 400, fontSize: 20, marginBottom: 24}}>Imagen del Hero (página principal)</h3>
+        
+        <div style={{marginBottom: 20}}>
+          <label>Vista previa</label>
+          <div style={{
+            width: '100%',
+            aspectRatio: '4/5',
+            borderRadius: 8,
+            overflow: 'hidden',
+            border: '1px solid var(--line)',
+            background: 'var(--cream)',
+            marginTop: 8
+          }}>
+            <img
+              src={preview}
+              alt="Hero preview"
+              style={{width: '100%', height: '100%', objectFit: 'cover'}}
+              onError={(e) => { e.target.src = '/uploads/tarta.jpg'; }}
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Cambiar imagen</label>
+          <label className="pdf-upload-area" style={{padding: 20}}>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={handleImageUpload}
+              disabled={uploading}
+              style={{display: 'none'}}
+            />
+            <div>
+              <div style={{fontSize: 24, marginBottom: 6}}>🖼️</div>
+              {uploading ? (
+                <p>Subiendo...</p>
+              ) : (
+                <>
+                  <p>Click para subir nueva imagen</p>
+                  <p style={{fontSize: 11, marginTop: 4}}>JPG, PNG, WebP · máximo 5MB · relación 4:5</p>
+                </>
+              )}
+            </div>
+          </label>
+        </div>
+
+        <button
+          className="btn-ghost-sm"
+          onClick={handleResetToDefault}
+          disabled={saving || settings.hero_image_url === '/uploads/tarta.jpg'}
+          style={{marginTop: 12}}
+        >
+          {saving ? 'Restableciendo...' : '↺ Restablecer imagen por defecto'}
+        </button>
+      </div>
+
+      <div style={{marginTop: 32, padding: 20, background: 'var(--cream)', borderRadius: 10, maxWidth: 600}}>
+        <p style={{fontSize: 13, color: 'var(--ink-2)', margin: 0}}>
+          <strong>Nota:</strong> Esta imagen aparece en la sección principal de la página. Se recomienda usar una imagen vertical (relación 4:5) con fondo claro.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 /* ---------- Main App ---------- */
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -1413,6 +1557,7 @@ function App() {
         {activeTab === 'trash' && <TrashCan />}
         {activeTab === 'orders' && <OrdersAdmin />}
         {activeTab === 'users' && <UsersAdmin />}
+        {activeTab === 'settings' && <SettingsAdmin />}
       </main>
     </div>
   );
