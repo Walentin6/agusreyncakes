@@ -1,6 +1,43 @@
 // Single Recipe API - Get, Update, Delete
 import { jsonResponse, validatePdfBase64 } from '../../utils.js';
 
+const STORAGE_LIMIT = 10 * 1024 * 1024 * 1024;
+
+async function getBucketUsage(bucket) {
+  if (!bucket) return 0;
+  let bytes = 0;
+  let cursor = undefined;
+  do {
+    const listed = await bucket.list({ cursor });
+    for (const obj of listed.objects) bytes += obj.size || 0;
+    cursor = listed.truncated ? listed.cursor : undefined;
+  } while (cursor);
+  return bytes;
+}
+
+async function checkStorageLimit(env, additionalBytes) {
+  try {
+    const [imagesBytes, pdfsBytes] = await Promise.all([
+      getBucketUsage(env.IMAGES),
+      getBucketUsage(env.PDF_BUCKET)
+    ]);
+    const total = imagesBytes + pdfsBytes + additionalBytes;
+    if (total > STORAGE_LIMIT) {
+      const used = imagesBytes + pdfsBytes;
+      const formatBytes = (b) => {
+        if (b === 0) return '0 B';
+        const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(b) / Math.log(k));
+        return parseFloat((b / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      };
+      return { allowed: false, error: `Límite de almacenamiento alcanzado (${formatBytes(used)} / ${formatBytes(STORAGE_LIMIT)}). Eliminá archivos antes de subir más.` };
+    }
+    return { allowed: true };
+  } catch {
+    return { allowed: true };
+  }
+}
+
 export async function onRequestGet(context) {
   const { env } = context;
   const id = context.params.id;
@@ -55,6 +92,13 @@ export async function onRequestPut(context) {
           return jsonResponse({ error: validation.error }, 400);
         }
         pdfBase64 = validation.clean;
+      }
+    }
+
+    if (pdfBase64) {
+      const storageCheck = await checkStorageLimit(env, pdfBase64.length * 0.75);
+      if (!storageCheck.allowed) {
+        return jsonResponse({ error: storageCheck.error }, 400);
       }
     }
 

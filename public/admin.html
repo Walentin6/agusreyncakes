@@ -272,6 +272,56 @@
   .btn-resend { background: #E3F2FD; color: #1565C0; }
   .btn-resend:hover { background: #BBDEFB; }
   .btn-resend:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* Storage bar */
+  .storage-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .storage-bar-bg {
+    width: 100%;
+    height: 24px;
+    background: var(--cream-2);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 12px 0;
+  }
+  .storage-bar-fill {
+    height: 100%;
+    border-radius: 12px;
+    transition: width .4s ease, background .3s ease;
+  }
+  .storage-bar-fill.safe { background: linear-gradient(90deg, #4CAF50, #66BB6A); }
+  .storage-bar-fill.warning { background: linear-gradient(90deg, #FF9800, #FFB74D); }
+  .storage-bar-fill.danger { background: linear-gradient(90deg, #F44336, #EF5350); }
+  .storage-details {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .storage-detail-item {
+    text-align: center;
+    padding: 12px;
+    background: var(--cream);
+    border-radius: 8px;
+  }
+  .storage-detail-item .sd-label {
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 4px;
+  }
+  .storage-detail-item .sd-value {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 24px;
+    color: var(--ink);
+  }
 </style>
 </head>
 <body>
@@ -310,6 +360,7 @@ function Sidebar({ activeTab, setActiveTab }) {
     { id: 'trash', label: 'Papelera', icon: '🗑' },
     { id: 'orders', label: 'Pedidos', icon: '◉' },
     { id: 'users', label: 'Usuarios', icon: '○' },
+    { id: 'storage', label: 'Almacenamiento', icon: '▤' },
     { id: 'settings', label: 'Configuración', icon: '⚙' },
   ];
 
@@ -339,11 +390,18 @@ function Sidebar({ activeTab, setActiveTab }) {
 
 function Dashboard() {
   const [stats, setStats] = useState(null);
+  const [storage, setStorage] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api('/api/admin/stats')
-      .then(data => setStats(data))
+    Promise.all([
+      api('/api/admin/stats'),
+      api('/api/admin/storage')
+    ])
+      .then(([statsData, storageData]) => {
+        setStats(statsData);
+        setStorage(storageData);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -378,6 +436,28 @@ function Dashboard() {
           <div className="value">{ARS(stats?.stats?.revenue || 0)}</div>
         </div>
       </div>
+
+      {storage && (
+        <div className="storage-card" style={{marginBottom: 32}}>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
+            <span style={{fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--ink-3)'}}>
+              Almacenamiento R2
+            </span>
+            <span style={{fontSize: 13, color: 'var(--ink-2)'}}>
+              {storage.total.human} / {storage.total.limitHuman}
+            </span>
+          </div>
+          <div className="storage-bar-bg" style={{margin: '8px 0'}}>
+            <div
+              className={`storage-bar-fill ${storage.total.usagePercent > 90 ? 'danger' : storage.total.usagePercent > 70 ? 'warning' : 'safe'}`}
+              style={{width: `${Math.min(storage.total.usagePercent, 100)}%`}}
+            />
+          </div>
+          <div style={{fontSize: 12, color: 'var(--ink-3)'}}>
+            {storage.total.usagePercent.toFixed(1)}% usado · {storage.images.count} imágenes · {storage.pdfs.count} PDFs
+          </div>
+        </div>
+      )}
 
       <h2 style={{fontFamily: 'var(--serif)', fontWeight: 300, fontSize: 24, marginBottom: 20}}>Pedidos recientes</h2>
       <table className="data-table">
@@ -1380,6 +1460,101 @@ function UsersAdmin() {
   );
 }
 
+function StoragePanel() {
+  const [storage, setStorage] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api('/api/admin/storage')
+      .then(data => setStorage(data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="loading">Cargando...</div>;
+
+  const pct = storage?.total?.usagePercent || 0;
+  const barClass = pct > 90 ? 'danger' : pct > 70 ? 'warning' : 'safe';
+  const alertVisible = pct > 80;
+
+  return (
+    <div>
+      <div className="main-header">
+        <h1>Almacenamiento R2</h1>
+      </div>
+
+      {alertVisible && (
+        <div style={{
+          padding: '16px 20px',
+          borderRadius: 10,
+          marginBottom: 24,
+          background: pct > 90 ? '#FFEBEE' : '#FFF3E0',
+          color: pct > 90 ? '#C62828' : '#EF6C00',
+          border: `1px solid ${pct > 90 ? '#EF9A9A' : '#FFE0B2'}`,
+          fontSize: 14
+        }}>
+          ⚠️ {pct > 90
+            ? '¡Almacenamiento casi lleno! Eliminá archivos para evitar quedarte sin espacio.'
+            : 'El almacenamiento está por encima del 80%. Considerá eliminar archivos innecesarios.'}
+        </div>
+      )}
+
+      <div className="storage-card">
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'baseline'}}>
+          <span style={{fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--ink-3)'}}>
+            Uso total
+          </span>
+          <span style={{fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 28, color: 'var(--ink)'}}>
+            {storage?.total?.human || '0 B'} / {storage?.total?.limitHuman || '10 GB'}
+          </span>
+        </div>
+
+        <div className="storage-bar-bg">
+          <div
+            className={`storage-bar-fill ${barClass}`}
+            style={{width: `${Math.min(pct, 100)}%`}}
+          />
+        </div>
+
+        <div style={{fontSize: 12, color: 'var(--ink-3)', textAlign: 'right'}}>
+          {pct.toFixed(1)}% usado · {storage?.total?.remainingHuman || '10 GB'} disponible
+        </div>
+
+        <div className="storage-details">
+          <div className="storage-detail-item">
+            <div className="sd-label">Imágenes</div>
+            <div className="sd-value">{storage?.images?.human || '0 B'}</div>
+            <div style={{fontSize: 12, color: 'var(--ink-3)', marginTop: 4}}>
+              {storage?.images?.count || 0} archivos
+            </div>
+          </div>
+          <div className="storage-detail-item">
+            <div className="sd-label">PDFs</div>
+            <div className="sd-value">{storage?.pdfs?.human || '0 B'}</div>
+            <div style={{fontSize: 12, color: 'var(--ink-3)', marginTop: 4}}>
+              {storage?.pdfs?.count || 0} archivos
+            </div>
+          </div>
+          <div className="storage-detail-item">
+            <div className="sd-label">Límite (capa gratuita)</div>
+            <div className="sd-value">10 GB</div>
+            <div style={{fontSize: 12, color: 'var(--ink-3)', marginTop: 4}}>
+              Cloudflare R2
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{marginTop: 24, padding: 20, background: 'var(--cream)', borderRadius: 10, maxWidth: 600}}>
+        <p style={{fontSize: 13, color: 'var(--ink-2)', margin: 0}}>
+          <strong>Nota:</strong> Cloudflare R2 ofrece 10GB gratuitos por mes. Si se excede este límite, se aplicarán cargos adicionales.
+          Las imágenes y PDFs de recetas se almacenan en R2 para reducir el uso de la base de datos D1.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function SettingsAdmin() {
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(true);
@@ -1557,6 +1732,7 @@ function App() {
         {activeTab === 'trash' && <TrashCan />}
         {activeTab === 'orders' && <OrdersAdmin />}
         {activeTab === 'users' && <UsersAdmin />}
+        {activeTab === 'storage' && <StoragePanel />}
         {activeTab === 'settings' && <SettingsAdmin />}
       </main>
     </div>
