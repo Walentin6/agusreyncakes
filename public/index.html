@@ -415,6 +415,16 @@
     background: var(--ink); color: var(--cream); border-color: var(--ink);
   }
   .chip .ct { opacity: .55; margin-left: 6px; font-size: 11px; }
+  
+  .tags-filter { display: flex; align-items: center; gap: 12px; margin-top: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+  .tags-label { font-size: 11px; color: var(--ink-2); letter-spacing: .05em; text-transform: uppercase; }
+  .tags-chips { margin-bottom: 0; }
+  .tag-chip { border-style: dashed; }
+  .tag-chip.active { border-style: solid; background: var(--rose); border-color: var(--rose); color: var(--cream); }
+  .clear-tags { background: var(--ink-2); color: var(--cream); border-color: var(--ink-2); font-size: 11px; padding: 7px 14px; }
+  .clear-tags:hover { background: var(--ink); border-color: var(--ink); }
+  
+  .results-count { font-size: 13px; color: var(--ink-2); margin-bottom: 24px; letter-spacing: .03em; }
 
   /* ---------- recipes grid ---------- */
   .grid {
@@ -1368,12 +1378,10 @@ function Hero({ onAdd, heroImageUrl }) {
       <div className="hero-left">
         <div className="hero-eyebrow"></div>
         <h1>
-          Recetas<br/>
-          <em>de autora</em><br/>
-          para hornear <span className="scribble">en casa</span>
+          Fórmulas para llevar tu pastelería a <span className="scribble">otro nivel</span>.
         </h1>
         <p className="lede">
-          Cada receta es un paso a paso ilustrado, con tips, sustitutos y los pequeños secretos que aprendí en estos diez años amasando. Llega a tu mail al instante.
+          Cada receta incluye fórmulas exactas, explicaciones claras, tips técnicos, sustituciones y pequeños secretos aprendidos a lo largo de años de experiencia en pastelería.
         </p>
         <div className="hero-cta">
           <a className="btn btn-primary" href="#recetas">Ver el recetario <span className="arr">→</span></a>
@@ -1396,7 +1404,7 @@ function Hero({ onAdd, heroImageUrl }) {
 }
 
 function Marquee() {
-  const items = ["tortas", "macarons", "panadería", "petit fours", "tartas", "cupcakes", "merengues"];
+  const items = ["macarons", "petit fours", "lemon pie", "rogel", "torta cumple"];
   const row = (
     <span>
       {items.map((w,i) => (
@@ -1477,6 +1485,13 @@ function RecipeModal({ recipe, onClose, onAdd, user }) {
 
 function Recipes({ recipes, categories, onAdd, saved, onSave, onSelectRecipe, user }) {
   const [active, setActive] = useState("Todas");
+  const [selectedTags, setSelectedTags] = useState([]);
+  
+  const allTags = useMemo(() => {
+    const tags = new Set();
+    recipes.forEach(r => { if (r.tag) tags.add(r.tag); });
+    return Array.from(tags).sort();
+  }, [recipes]);
   
   const counts = useMemo(() => {
     const c = { Todas: recipes.length };
@@ -1484,7 +1499,25 @@ function Recipes({ recipes, categories, onAdd, saved, onSave, onSelectRecipe, us
     return c;
   }, [recipes]);
   
-  const list = active === "Todas" ? recipes : recipes.filter(r => r.category === active);
+  const tagCounts = useMemo(() => {
+    const c = {};
+    recipes.forEach(r => { if (r.tag) c[r.tag] = (c[r.tag]||0)+1; });
+    return c;
+  }, [recipes]);
+  
+  const toggleTag = (tag) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  };
+  
+  const list = useMemo(() => {
+    let filtered = active === "Todas" ? recipes : recipes.filter(r => r.category === active);
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter(r => r.tag && selectedTags.includes(r.tag));
+    }
+    return filtered;
+  }, [recipes, active, selectedTags]);
 
   return (
     <section id="recetas">
@@ -1506,6 +1539,31 @@ function Recipes({ recipes, categories, onAdd, saved, onSave, onSelectRecipe, us
             {c}<span className="ct">({counts[c]||0})</span>
           </button>
         ))}
+      </div>
+      {allTags.length > 0 && (
+        <div className="tags-filter">
+          <span className="tags-label">Filtrar por:</span>
+          <div className="chips tags-chips">
+            {allTags.map(t => (
+              <button
+                key={t}
+                className={`chip tag-chip ${selectedTags.includes(t) ? "active" : ""}`}
+                onClick={() => toggleTag(t)}
+              >
+                {t}<span className="ct">({tagCounts[t]||0})</span>
+              </button>
+            ))}
+            {selectedTags.length > 0 && (
+              <button className="chip clear-tags" onClick={() => setSelectedTags([])}>
+                Limpiar
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      <div className="results-count">
+        {list.length} {list.length === 1 ? 'receta' : 'recetas'}
+        {selectedTags.length > 0 && <span> · tags activos: {selectedTags.join(', ')}</span>}
       </div>
 
       <div className="grid">

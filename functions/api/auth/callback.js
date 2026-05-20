@@ -46,7 +46,11 @@ export async function onRequestGet(context) {
     
     if (!tokenResponse.ok || !tokenData.access_token) {
       console.error('Token exchange failed:', tokenData);
-      return Response.redirect(`${env.SITE_URL}/?error=token_exchange_failed`, 302);
+      console.error('Token response status:', tokenResponse.status);
+      console.error('Redirect URI used:', redirectUri);
+      console.error('Client ID present:', !!clientId);
+      console.error('Client Secret present:', !!clientSecret);
+      return Response.redirect(`${env.SITE_URL}/?error=token_exchange_failed&detail=${encodeURIComponent(tokenData.error || 'unknown')}`, 302);
     }
     
     // Get user info from Google
