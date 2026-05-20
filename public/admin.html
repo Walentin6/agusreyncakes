@@ -356,6 +356,7 @@ function Sidebar({ activeTab, setActiveTab }) {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: '◈' },
     { id: 'recipes', label: 'Recetas', icon: '✦' },
+    { id: 'categories', label: 'Categorías', icon: '▣' },
     { id: 'combos', label: 'Combos', icon: '◫' },
     { id: 'trash', label: 'Papelera', icon: '🗑' },
     { id: 'orders', label: 'Pedidos', icon: '◉' },
@@ -497,7 +498,7 @@ function Dashboard() {
   );
 }
 
-function RecipeModal({ recipe, onClose, onSave }) {
+function RecipeModal({ recipe, categories, onClose, onSave }) {
   const [form, setForm] = useState(recipe || {
     title: '', category: 'Tortas', tag: 'nuevo', time: '1h', level: 'fácil',
     price: 0, description: '', label: '', photo_tone: 'pink', images: [],
@@ -656,8 +657,9 @@ function RecipeModal({ recipe, onClose, onSave }) {
               <div className="form-group">
                 <label>Categoría</label>
                 <select value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
-                  <option>Tortas</option><option>Tartas</option><option>Macarons</option>
-                  <option>Petit fours</option><option>Cupcakes</option><option>Panadería</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.name}>{c.name}</option>
+                  ))}
                 </select>
               </div>
               <div className="form-group">
@@ -759,6 +761,7 @@ function RecipesAdmin() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState(null);
+  const [categories, setCategories] = useState([]);
 
   const loadRecipes = () => {
     api('/api/admin/recipes')
@@ -767,7 +770,13 @@ function RecipesAdmin() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadRecipes(); }, []);
+  const loadCategories = () => {
+    api('/api/categories')
+      .then(data => setCategories(data.categories || []))
+      .catch(console.error);
+  };
+
+  useEffect(() => { loadRecipes(); loadCategories(); }, []);
 
   const handleSave = async (recipe) => {
     try {
@@ -868,10 +877,134 @@ function RecipesAdmin() {
       {modalOpen && (
         <RecipeModal
           recipe={editingRecipe}
+          categories={categories}
           onClose={() => setModalOpen(false)}
           onSave={handleSave}
         />
       )}
+    </div>
+  );
+}
+
+function Categories() {
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [newCatName, setNewCatName] = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [editingName, setEditingName] = useState('');
+
+  const loadCategories = () => {
+    setLoading(true);
+    api('/api/categories')
+      .then(data => setCategories(data.categories || []))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadCategories(); }, []);
+
+  const handleAdd = async (e) => {
+    e.preventDefault();
+    if (!newCatName.trim()) return;
+    try {
+      await api('/api/categories', {
+        method: 'POST',
+        body: JSON.stringify({ name: newCatName.trim() })
+      });
+      setNewCatName('');
+      loadCategories();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  };
+
+  const handleUpdate = async (id) => {
+    if (!editingName.trim()) return;
+    try {
+      await api(`/api/categories/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name: editingName.trim() })
+      });
+      setEditingId(null);
+      setEditingName('');
+      loadCategories();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('¿Eliminar esta categoría?')) return;
+    try {
+      await api(`/api/categories/${id}`, { method: 'DELETE' });
+      loadCategories();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  };
+
+  if (loading) return <div className="loading">Cargando...</div>;
+
+  const visibleCategories = categories.filter(c => !c.is_default);
+
+  return (
+    <div>
+      <div className="main-header">
+        <h1>Categorías</h1>
+      </div>
+      <form onSubmit={handleAdd} style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
+        <input
+          type="text"
+          value={newCatName}
+          onChange={e => setNewCatName(e.target.value)}
+          placeholder="Nueva categoría..."
+          style={{ flex: 1, padding: '10px 14px', border: '1px solid var(--line)', borderRadius: 8, background: 'var(--cream)' }}
+        />
+        <button type="submit" className="btn-primary-sm">Agregar</button>
+      </form>
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {visibleCategories.map(c => (
+            <tr key={c.id}>
+              <td style={{ fontWeight: 500, color: 'var(--ink)' }}>
+                {editingId === c.id ? (
+                  <input
+                    type="text"
+                    value={editingName}
+                    onChange={e => setEditingName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleUpdate(c.id); if (e.key === 'Escape') { setEditingId(null); setEditingName(''); } }}
+                    autoFocus
+                    style={{ padding: '6px 10px', border: '1px solid var(--rose)', borderRadius: 6, width: '100%' }}
+                  />
+                ) : (
+                  c.name
+                )}
+              </td>
+              <td>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {editingId === c.id ? (
+                    <>
+                      <button className="btn-primary-sm" onClick={() => handleUpdate(c.id)}>Guardar</button>
+                      <button className="btn-ghost-sm" onClick={() => { setEditingId(null); setEditingName(''); }}>Cancelar</button>
+                    </>
+                  ) : (
+                    <>
+                      <button className="btn-ghost-sm" onClick={() => { setEditingId(c.id); setEditingName(c.name); }}>Editar</button>
+                      <button className="btn-danger-sm" onClick={() => handleDelete(c.id)}>Eliminar</button>
+                    </>
+                  )}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -1728,6 +1861,7 @@ function App() {
       <main className="main">
         {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'recipes' && <RecipesAdmin />}
+        {activeTab === 'categories' && <Categories />}
         {activeTab === 'combos' && <CombosPanel />}
         {activeTab === 'trash' && <TrashCan />}
         {activeTab === 'orders' && <OrdersAdmin />}

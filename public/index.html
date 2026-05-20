@@ -1123,6 +1123,23 @@
     .bundle { padding: 32px 22px; }
   }
 
+  .faq-list { max-width: 720px; }
+  .faq-item { border-bottom: 1px solid var(--line); }
+  .faq-question {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 0; cursor: pointer; font-size: 16px;
+    font-family: var(--sans); color: var(--ink);
+    transition: color .2s;
+  }
+  .faq-question:hover { color: var(--rose); }
+  .faq-icon { font-size: 20px; transition: transform .25s; color: var(--rose); }
+  .faq-item.open .faq-icon { transform: rotate(45deg); }
+  .faq-answer {
+    max-height: 0; overflow: hidden; transition: max-height .3s ease;
+    padding: 0; color: var(--ink-2); font-size: 15px; line-height: 1.65;
+  }
+  .faq-item.open .faq-answer { max-height: 300px; padding-bottom: 20px; }
+
   /* ---------- mobile menu ---------- */
   .menu-btn {
     display: none;
@@ -1485,13 +1502,6 @@ function RecipeModal({ recipe, onClose, onAdd, user }) {
 
 function Recipes({ recipes, categories, onAdd, saved, onSave, onSelectRecipe, user }) {
   const [active, setActive] = useState("Todas");
-  const [selectedTags, setSelectedTags] = useState([]);
-  
-  const allTags = useMemo(() => {
-    const tags = new Set();
-    recipes.forEach(r => { if (r.tag) tags.add(r.tag); });
-    return Array.from(tags).sort();
-  }, [recipes]);
   
   const counts = useMemo(() => {
     const c = { Todas: recipes.length };
@@ -1499,25 +1509,10 @@ function Recipes({ recipes, categories, onAdd, saved, onSave, onSelectRecipe, us
     return c;
   }, [recipes]);
   
-  const tagCounts = useMemo(() => {
-    const c = {};
-    recipes.forEach(r => { if (r.tag) c[r.tag] = (c[r.tag]||0)+1; });
-    return c;
-  }, [recipes]);
-  
-  const toggleTag = (tag) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-    );
-  };
-  
   const list = useMemo(() => {
     let filtered = active === "Todas" ? recipes : recipes.filter(r => r.category === active);
-    if (selectedTags.length > 0) {
-      filtered = filtered.filter(r => r.tag && selectedTags.includes(r.tag));
-    }
     return filtered;
-  }, [recipes, active, selectedTags]);
+  }, [recipes, active]);
 
   return (
     <section id="recetas">
@@ -1540,30 +1535,8 @@ function Recipes({ recipes, categories, onAdd, saved, onSave, onSelectRecipe, us
           </button>
         ))}
       </div>
-      {allTags.length > 0 && (
-        <div className="tags-filter">
-          <span className="tags-label">Filtrar por:</span>
-          <div className="chips tags-chips">
-            {allTags.map(t => (
-              <button
-                key={t}
-                className={`chip tag-chip ${selectedTags.includes(t) ? "active" : ""}`}
-                onClick={() => toggleTag(t)}
-              >
-                {t}<span className="ct">({tagCounts[t]||0})</span>
-              </button>
-            ))}
-            {selectedTags.length > 0 && (
-              <button className="chip clear-tags" onClick={() => setSelectedTags([])}>
-                Limpiar
-              </button>
-            )}
-          </div>
-        </div>
-      )}
       <div className="results-count">
         {list.length} {list.length === 1 ? 'receta' : 'recetas'}
-        {selectedTags.length > 0 && <span> · tags activos: {selectedTags.join(', ')}</span>}
       </div>
 
       <div className="grid">
@@ -1616,19 +1589,86 @@ function About() {
       <div className="about-grid">
         <div className="about-photo">
           <img src="/uploads/agusreynoso.jpg" alt="Agustina Reynoso" style={{width: '100%', height: 'auto', display: 'block'}} />
-          <div className="about-stamp">¡hola, soy yo! ✿</div>
+          <div className="about-stamp">recetas con alma ✿</div>
         </div>
         <div>
-          <div className="sec-eyebrow">— ¿quién soy?</div>
-          <h2>Diez años amasando <em>desde casa</em>.</h2>
+          <div className="sec-eyebrow">— Sobre AgusReynCakes</div>
+          <h2>Sobre <em>AgusReynCakes</em></h2>
           <p>
-            Soy Agustina. Empecé horneando para mi familia los domingos y terminé escribiendo este recetario que hoy llega a más de doce mil pasteleras. Cada receta la testeo —al menos— ocho veces antes de publicarla, y vienen con los trucos que solo se aprenden ensuciándose las manos.
+            Soy Agus, creadora de AgusReynCakes.
           </p>
           <p style={{marginTop: 14}}>
-            No vas a encontrar humo ni recetas imposibles. Solo masas que funcionan, sin bata blanca, en cocinas reales.
+            Vivo en un pueblo donde la pastelería forma parte de las celebraciones, las mesas compartidas y las tradiciones que pasan de generación en generación.
+          </p>
+          <p style={{marginTop: 14}}>
+            Empecé como muchas: probando, equivocándome y perfeccionando recetas. Con el tiempo entendí que no quería hacer simplemente una torta más, sino crear productos con identidad, técnica y detalles cuidados.
+          </p>
+          <p style={{marginTop: 14}}>
+            Creo profundamente en los clásicos bien hechos: una pasta frola perfecta, un alfajor que se desarma apenas lo mordés o un budín con aroma a cítricos. Pero también creo en entender por qué funcionan las fórmulas, no solo en seguir pasos.
+          </p>
+          <p style={{marginTop: 14}}>
+            Después de años produciendo, vendiendo y perfeccionando mis recetas, decidí compartir lo aprendido: no solo fórmulas, sino también criterio, técnica y herramientas reales para lograr resultados consistentes y de calidad.
+          </p>
+          <p style={{marginTop: 14}}>
+            Este espacio nace desde esa idea: volver a lo simple, pero hacerlo con excelencia.
           </p>
           <div className="signature">— Agus</div>
         </div>
+      </div>
+    </section>
+  );
+}
+
+function FAQ() {
+  const [openIndex, setOpenIndex] = useState(null);
+
+  const faqs = [
+    {
+      question: "¿Cuánto tiempo tengo acceso al contenido?",
+      answer: "El acceso es ilimitado. Una vez realizada la compra, las recetas quedan disponibles para vos sin fecha de vencimiento."
+    },
+    {
+      question: "¿Cómo recibo las recetas?",
+      answer: "Las recetas se envían automáticamente a tu correo electrónico una vez confirmada la compra."
+    },
+    {
+      question: "¿Las recetas incluyen explicaciones y tips?",
+      answer: "Sí. Cada fórmula incluye explicaciones claras, recomendaciones técnicas, sustituciones posibles y detalles importantes para lograr buenos resultados."
+    },
+    {
+      question: "¿Puedo hacer consultas si tengo dudas?",
+      answer: "Sí. Todas las personas que adquieren las recetas pueden escribirme por mail para realizar consultas y recibir asesoramiento personalizado de mi parte."
+    },
+    {
+      question: "¿Necesito experiencia previa?",
+      answer: "No necesariamente. Las recetas están explicadas de forma clara para que puedas comprender tanto el paso a paso como la lógica detrás de cada preparación."
+    },
+    {
+      question: "¿Las recetas están en PDF?",
+      answer: "Sí. Todas las recetas se entregan en formato PDF para que puedas descargarlas y consultarlas cuando quieras."
+    }
+  ];
+
+  const toggle = (i) => setOpenIndex(openIndex === i ? null : i);
+
+  return (
+    <section id="faq">
+      <div className="sec-head">
+        <div>
+          <div className="sec-eyebrow">— preguntas frecuentes</div>
+          <h2 className="sec-title">Preguntas <em>frecuentes</em></h2>
+        </div>
+      </div>
+      <div className="faq-list">
+        {faqs.map((faq, i) => (
+          <div key={i} className={`faq-item ${openIndex === i ? 'open' : ''}`}>
+            <div className="faq-question" onClick={() => toggle(i)}>
+              <span>{faq.question}</span>
+              <span className="faq-icon">+</span>
+            </div>
+            <div className="faq-answer">{faq.answer}</div>
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -2350,6 +2390,7 @@ function App() {
       <About />
       <Bundles onAdd={addToCart} />
       <MyRecipes user={user} setToast={setToast} />
+      <FAQ />
       <Footer />
       <CartDrawer
         open={cartOpen}
