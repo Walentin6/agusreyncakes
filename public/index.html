@@ -2268,8 +2268,8 @@ function App() {
     api('/api/recipes')
       .then(data => {
         setRecipes(data.recipes || []);
-        // Extract unique categories
-        const cats = [...new Set((data.recipes || []).map(r => r.category))];
+        // Extract unique categories, excluding 'Sin categoría' from chips
+        const cats = [...new Set((data.recipes || []).map(r => r.category))].filter(c => c !== 'Sin categoría');
         setCategories(["Todas", ...cats]);
       })
       .catch(err => {
