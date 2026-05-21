@@ -1461,7 +1461,7 @@ function Topbar() {
   );
 }
 
-function Nav({ cartCount, onCart, menuOpen, setMenuOpen, user, onLogin, onLogout }) {
+function Nav({ cartCount, onCart, menuOpen, setMenuOpen, user, onLogin, onLogout, onAccountOpen }) {
   return (
     <>
       <nav className="head">
@@ -1476,8 +1476,10 @@ function Nav({ cartCount, onCart, menuOpen, setMenuOpen, user, onLogin, onLogout
           <li>
             {user ? (
               <div className="user-menu">
-                {user.picture && <img src={user.picture} alt="" className="user-avatar" />}
-                <span style={{fontSize: 13, color: 'var(--ink-2)'}}>{user.name?.split(' ')[0]}</span>
+                <button style={{background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8}} onClick={onAccountOpen}>
+                  {user.picture && <img src={user.picture} alt="" className="user-avatar" />}
+                  <span style={{fontSize: 13, color: 'var(--ink-2)'}}>{user.name?.split(' ')[0]}</span>
+                </button>
                 <button className="login-btn" onClick={onLogout}>Salir</button>
               </div>
             ) : (
@@ -2610,6 +2612,7 @@ function App() {
         user={user}
         onLogin={handleLogin}
         onLogout={handleLogout}
+        onAccountOpen={() => setAccountOpen(true)}
       />
       <Hero onAdd={addToCart} heroImageUrl={heroImageUrl} />
       <Marquee />
