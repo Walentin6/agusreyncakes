@@ -2330,7 +2330,7 @@ function OrderItems({ orderId, onResend, resending }) {
   );
 }
 
-function Footer({ onLogin, onNavigateCategory, user, categories }) {
+function Footer({ onLogin, onNavigateCategory, onAccountOpen, user, categories }) {
   const footerCategories = categories ? categories.filter(c => c !== 'Todas').slice(0, 5) : [];
   return (
     <footer>
