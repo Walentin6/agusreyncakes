@@ -1526,8 +1526,7 @@ function RecipeModal({ recipe, onClose, onAdd, user }) {
     );
   }
 
-function Recipes({ recipes, categories, onAdd, saved, onSave, onSelectRecipe, user }) {
-  const [active, setActive] = useState("Todas");
+function Recipes({ recipes, categories, onAdd, saved, onSave, onSelectRecipe, user, activeCategory, onCategoryChange }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
   const INITIAL_SHOW = 6;
@@ -1539,7 +1538,7 @@ function Recipes({ recipes, categories, onAdd, saved, onSave, onSelectRecipe, us
   }, [recipes]);
 
   const list = useMemo(() => {
-    let filtered = active === "Todas" ? recipes : recipes.filter(r => r.category === active);
+    let filtered = activeCategory === "Todas" ? recipes : recipes.filter(r => r.category === activeCategory);
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(r =>
@@ -1549,7 +1548,7 @@ function Recipes({ recipes, categories, onAdd, saved, onSave, onSelectRecipe, us
       );
     }
     return filtered;
-  }, [recipes, active, searchQuery]);
+  }, [recipes, activeCategory, searchQuery]);
 
   const displayed = showAll ? list : list.slice(0, INITIAL_SHOW);
   const hasMore = list.length > INITIAL_SHOW && !showAll;
@@ -1576,8 +1575,8 @@ function Recipes({ recipes, categories, onAdd, saved, onSave, onSelectRecipe, us
         {categories.map(c => (
           <button
             key={c}
-            className={`chip ${active===c ? "active" : ""}`}
-            onClick={() => { setActive(c); setShowAll(false); }}
+            className={`chip ${activeCategory===c ? "active" : ""}`}
+            onClick={() => { onCategoryChange(c); setShowAll(false); }}
           >
             {c}<span className="ct">({counts[c]||0})</span>
           </button>
@@ -2163,7 +2162,7 @@ function OrderItems({ orderId, onResend, resending }) {
   );
 }
 
-function Footer() {
+function Footer({ onLogin, onNavigateCategory, user }) {
   return (
     <footer>
       <div className="foot-grid">
@@ -2178,27 +2177,27 @@ function Footer() {
         <div>
           <h4>Recetario</h4>
           <ul>
-            <li><a href="#">Tortas</a></li>
-            <li><a href="#">Tartas</a></li>
-            <li><a href="#">Macarons</a></li>
-            <li><a href="#">Panadería</a></li>
-            <li><a href="#">Combos</a></li>
+            <li><a href="#recetas" onClick={(e) => { e.preventDefault(); onNavigateCategory('Tortas'); }}>Tortas</a></li>
+            <li><a href="#recetas" onClick={(e) => { e.preventDefault(); onNavigateCategory('Tartas'); }}>Tartas</a></li>
+            <li><a href="#recetas" onClick={(e) => { e.preventDefault(); onNavigateCategory('Macarons'); }}>Macarons</a></li>
+            <li><a href="#recetas" onClick={(e) => { e.preventDefault(); onNavigateCategory('Panadería'); }}>Panadería</a></li>
+            <li><a href="#recetas" onClick={(e) => { e.preventDefault(); onNavigateCategory('Combos'); }}>Combos</a></li>
           </ul>
         </div>
         <div>
           <h4>La casa</h4>
           <ul>
-            <li><a href="#">Sobre Agustina</a></li>
-            <li><a href="#">Reseñas</a></li>
-            <li><a href="#">Preguntas frecuentes</a></li>
-            <li><a href="#">Contacto</a></li>
+            <li><a href="#sobre">Sobre Agustina</a></li>
+            <li><a href="#reseñas">Reseñas</a></li>
+            <li><a href="#faq">Preguntas frecuentes</a></li>
+            <li><a href="mailto:agusreyn207@gmail.com">Contacto</a></li>
           </ul>
         </div>
         <div>
           <h4>Tienda</h4>
           <ul>
-            <li><a href="#">Mi cuenta</a></li>
-            <li><a href="#">Mis recetas</a></li>
+            <li><a href="#" onClick={(e) => { e.preventDefault(); onLogin(); }}>Mi cuenta</a></li>
+            <li><a href="#mis-recetas" onClick={(e) => { if (!user) { e.preventDefault(); onLogin(); } else { document.getElementById('mis-recetas')?.scrollIntoView({ behavior: 'smooth' }); } }}>Mis recetas</a></li>
             <li><a href="/terminos.html">Términos</a></li>
             <li><a href="/privacidad.html">Privacidad</a></li>
           </ul>
@@ -2206,7 +2205,7 @@ function Footer() {
       </div>
       <div className="foot-bottom">
         <span>© 2026 agustina reynoso · recetas de autora</span>
-        <span>HECHO CON HARINA &amp; AMOR EN JUSTINIANO POSSE.</span>
+        <span>HECHO CON HARINA & AMOR EN JUSTINIANO POSSE.</span>
       </div>
     </footer>
   );
@@ -2278,6 +2277,7 @@ function App() {
   const [authOpen, setAuthOpen] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [heroImageUrl, setHeroImageUrl] = useState(null);
+  const [activeCategory, setActiveCategory] = useState("Todas");
 
   // Fetch settings for hero image
   useEffect(() => {
@@ -2443,12 +2443,17 @@ function App() {
           onSave={toggleSave}
           onSelectRecipe={setSelectedRecipe}
           user={user}
+          activeCategory={activeCategory}
+          onCategoryChange={setActiveCategory}
         />
       <About />
       <Bundles onAdd={addToCart} />
       <MyRecipes user={user} setToast={setToast} />
       <FAQ />
-      <Footer />
+      <Footer onLogin={handleLogin} onNavigateCategory={(cat) => {
+        setActiveCategory(cat);
+        document.getElementById('recetas')?.scrollIntoView({ behavior: 'smooth' });
+      }} user={user} />
       <CartDrawer
         open={cartOpen}
         onClose={() => setCartOpen(false)}
