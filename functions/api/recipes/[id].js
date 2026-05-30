@@ -202,10 +202,6 @@ export async function onRequestDelete(context) {
         if (env.PDF_BUCKET && recipe.pdf_base64 === 'R2_STORED') {
           try { await env.PDF_BUCKET.delete(`recipe_pdfs/${id}.txt`); } catch (e) { /* ignore */ }
         }
-
-        if (recipe.video_url) {
-          try { await env.IMAGES.delete(recipe.video_url); } catch (e) { /* ignore */ }
-        }
       }
 
       await env.DB.prepare('DELETE FROM recipes WHERE id = ?').bind(id).run();

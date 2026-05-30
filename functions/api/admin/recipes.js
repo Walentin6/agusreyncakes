@@ -11,7 +11,7 @@ export async function onRequestGet(context) {
   try {
     const recipes = await env.DB.prepare(
       `SELECT id, title, category, tag, time, level, price, description, content,
-              image_url, label, photo_tone, published, images, created_at, updated_at,
+              image_url, label, photo_tone, published, images, created_at, updated_at, video_url,
               CASE WHEN pdf_base64 IS NOT NULL THEN 1 ELSE 0 END as has_pdf,
               CASE WHEN video_url IS NOT NULL THEN 1 ELSE 0 END as has_video,
               CASE WHEN images IS NOT NULL AND images != '[]' AND images != '' THEN json_array_length(images) ELSE 0 END as images_count

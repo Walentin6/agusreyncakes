@@ -2347,12 +2347,30 @@ function OrderItems({ orderId, onResend, resending }) {
 
 function MyVideos({ user, recipes }) {
   const [playingId, setPlayingId] = useState(null);
+  const [embedUrl, setEmbedUrl] = useState(null);
+  const [videoLoading, setVideoLoading] = useState(false);
 
   if (!user || !user.purchasedRecipesWithVideo?.length) return null;
 
   const videoRecipes = (recipes || []).filter(r =>
     user.purchasedRecipesWithVideo?.includes(r.id)
   );
+
+  const openVideo = async (id) => {
+    setPlayingId(id);
+    setEmbedUrl(null);
+    setVideoLoading(true);
+    try {
+      const res = await fetch(`/api/recipes/${id}/video`, { credentials: 'include' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al cargar video');
+      setEmbedUrl(data.embedUrl);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setVideoLoading(false);
+    }
+  };
 
   return (
     <>
@@ -2375,7 +2393,7 @@ function MyVideos({ user, recipes }) {
                 key={r.id}
                 className="card"
                 style={{cursor: 'pointer'}}
-                onClick={() => setPlayingId(r.id)}
+                onClick={() => openVideo(r.id)}
               >
                 <div className="card-photo-wrap">
                   <Photo tone={r.photo_tone} label={r.label} images={r.images || []} />
@@ -2403,19 +2421,29 @@ function MyVideos({ user, recipes }) {
         )}
       </section>
       {playingId && (
-        <div className="modal-overlay" onClick={() => setPlayingId(null)}>
+        <div className="modal-overlay" onClick={() => { setPlayingId(null); setEmbedUrl(null); }}>
           <div className="modal" style={{maxWidth: 800, width: '90vw'}} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{videoRecipes.find(r => r.id === playingId)?.title}</h3>
-              <button className="btn-ghost-sm" onClick={() => setPlayingId(null)}>✕</button>
+              <button className="btn-ghost-sm" onClick={() => { setPlayingId(null); setEmbedUrl(null); }}>✕</button>
             </div>
-            <div style={{padding: 0, display: 'flex', justifyContent: 'center', background: '#000'}}>
-              <video
-                src={`/api/recipes/${playingId}/video`}
-                controls
-                autoPlay
-                style={{width: '100%', maxHeight: '70vh', display: 'block'}}
-              />
+            <div style={{padding: 0, display: 'flex', justifyContent: 'center', background: '#000', aspectRatio: '16/9'}}>
+              {videoLoading ? (
+                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', color: '#fff'}}>
+                  Cargando video...
+                </div>
+              ) : embedUrl ? (
+                <iframe
+                  src={embedUrl}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{width: '100%', height: '100%', border: 'none'}}
+                />
+              ) : (
+                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', color: '#fff'}}>
+                  No se pudo cargar el video
+                </div>
+              )}
             </div>
           </div>
         </div>

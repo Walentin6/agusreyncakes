@@ -1,52 +1,27 @@
-// Recipe Video API — Protected streaming + Admin upload
+// Recipe Video API — Protected YouTube embed URL + Admin set/remove
 // Route: /api/recipes/:id/video
 import { jsonResponse } from '../../../utils.js';
 
-const MAX_VIDEO_SIZE = 200 * 1024 * 1024; // 200MB
-const ALLOWED_TYPES = ['video/mp4', 'video/webm'];
-const STORAGE_LIMIT = 10 * 1024 * 1024 * 1024; // 10GB
-
-async function getBucketUsage(bucket) {
-  if (!bucket) return 0;
-  let bytes = 0;
-  let cursor = undefined;
-  do {
-    const listed = await bucket.list({ cursor });
-    for (const obj of listed.objects) bytes += obj.size || 0;
-    cursor = listed.truncated ? listed.cursor : undefined;
-  } while (cursor);
-  return bytes;
-}
-
-async function checkStorageLimit(env, additionalBytes) {
-  try {
-    const [imagesBytes, pdfsBytes] = await Promise.all([
-      getBucketUsage(env.IMAGES),
-      getBucketUsage(env.PDF_BUCKET)
-    ]);
-    const total = imagesBytes + pdfsBytes + additionalBytes;
-    if (total > STORAGE_LIMIT) {
-      const used = imagesBytes + pdfsBytes;
-      const formatBytes = (b) => {
-        if (b === 0) return '0 B';
-        const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(b) / Math.log(k));
-        return parseFloat((b / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-      };
-      return { allowed: false, error: `Límite de almacenamiento alcanzado (${formatBytes(used)} / ${formatBytes(STORAGE_LIMIT)}). Eliminá archivos antes de subir más.` };
-    }
-    return { allowed: true };
-  } catch {
-    return { allowed: true };
+function extractYouTubeId(url) {
+  if (!url) return null;
+  // Direct ID (11 chars)
+  if (/^[a-zA-Z0-9_-]{11}$/.test(url.trim())) return url.trim();
+  // Various URL formats
+  const patterns = [
+    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
   }
+  return null;
 }
 
-// GET — Stream video only if user purchased the recipe
+// GET — Return YouTube embed URL only if user purchased the recipe
 export async function onRequestGet(context) {
-  const { env, data, request, params } = context;
+  const { env, data, params } = context;
   const id = params.id;
 
-  // Auth required
   if (!data.session) {
     return jsonResponse({ error: 'Unauthorized' }, 401);
   }
@@ -72,55 +47,22 @@ export async function onRequestGet(context) {
       return jsonResponse({ error: 'No compraste esta receta' }, 403);
     }
 
-    // Serve video from R2
-    const key = recipe.video_url;
-    const rangeHeader = request.headers.get('Range');
-
-    let object;
-    if (rangeHeader) {
-      const match = rangeHeader.match(/^bytes=(\d*)-(\d*)$/);
-      if (match) {
-        const start = match[1] ? parseInt(match[1], 10) : undefined;
-        const end = match[2] ? parseInt(match[2], 10) : undefined;
-        const rangeOpts = {};
-        if (start !== undefined) rangeOpts.offset = start;
-        if (end !== undefined) rangeOpts.length = end - start + 1;
-        object = await env.IMAGES.get(key, { range: rangeOpts });
-      } else {
-        object = await env.IMAGES.get(key);
-      }
-    } else {
-      object = await env.IMAGES.get(key);
+    const videoId = extractYouTubeId(recipe.video_url);
+    if (!videoId) {
+      return jsonResponse({ error: 'Video URL inválido' }, 500);
     }
 
-    if (!object) {
-      return jsonResponse({ error: 'Video no encontrado en almacenamiento' }, 404);
-    }
-
-    const headers = new Headers();
-    headers.set('Accept-Ranges', 'bytes');
-    headers.set('Cache-Control', 'private, max-age=86400');
-
-    const contentType = object.httpMetadata?.contentType;
-    if (contentType) {
-      headers.set('Content-Type', contentType);
-    }
-
-    if (object.range) {
-      headers.set('Content-Range', `bytes ${object.range.offset}-${object.range.offset + object.range.length - 1}/${object.range.size}`);
-      headers.set('Content-Length', String(object.range.length));
-      return new Response(object.body, { status: 206, headers });
-    }
-
-    headers.set('Content-Length', String(object.size));
-    return new Response(object.body, { headers });
+    return jsonResponse({
+      embedUrl: `https://www.youtube.com/embed/${videoId}`,
+      videoId
+    });
   } catch (err) {
-    console.error('[VIDEO] Error serving video:', err);
-    return jsonResponse({ error: 'Error al servir video' }, 500);
+    console.error('[VIDEO] Error:', err);
+    return jsonResponse({ error: 'Error al obtener video' }, 500);
   }
 }
 
-// POST — Admin uploads video for a recipe
+// POST — Admin sets YouTube URL for a recipe
 export async function onRequestPost(context) {
   const { env, data, params, request } = context;
   const id = params.id;
@@ -130,54 +72,26 @@ export async function onRequestPost(context) {
   }
 
   try {
-    const formData = await request.formData();
-    const file = formData.get('video');
+    const body = await request.json();
+    const youtubeUrl = body.youtubeUrl || body.video_url;
 
-    if (!file || !(file instanceof File)) {
-      return jsonResponse({ error: 'No se encontró archivo en el request' }, 400);
+    if (!youtubeUrl) {
+      return jsonResponse({ error: 'Se requiere la URL de YouTube' }, 400);
     }
 
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      return jsonResponse({ error: `Tipo de archivo no permitido. Usá: MP4 o WEBM` }, 400);
+    const videoId = extractYouTubeId(youtubeUrl);
+    if (!videoId) {
+      return jsonResponse({ error: 'URL de YouTube no válida. Usá: https://youtu.be/xxxx o https://youtube.com/watch?v=xxxx' }, 400);
     }
-
-    if (file.size > MAX_VIDEO_SIZE) {
-      return jsonResponse({ error: `El archivo es muy grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo: 200MB.` }, 400);
-    }
-
-    const storageCheck = await checkStorageLimit(env, file.size);
-    if (!storageCheck.allowed) {
-      return jsonResponse({ error: storageCheck.error }, 400);
-    }
-
-    // Delete existing video if present
-    const existing = await env.DB.prepare(
-      'SELECT video_url FROM recipes WHERE id = ?'
-    ).bind(id).first();
-
-    if (existing && existing.video_url) {
-      try { await env.IMAGES.delete(existing.video_url); } catch (e) { /* ignore */ }
-    }
-
-    // Upload new video
-    const ext = file.name.split('.').pop() || 'mp4';
-    const key = `recipe_videos/${id}_${Date.now()}.${ext}`;
-
-    await env.IMAGES.put(key, file.stream(), {
-      httpMetadata: {
-        contentType: file.type,
-        cacheControl: 'private, max-age=86400'
-      }
-    });
 
     await env.DB.prepare(
       'UPDATE recipes SET video_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-    ).bind(key, id).run();
+    ).bind(youtubeUrl, id).run();
 
-    return jsonResponse({ success: true, video_url: key });
+    return jsonResponse({ success: true, videoId, video_url: youtubeUrl });
   } catch (err) {
-    console.error('[VIDEO] Upload error:', err);
-    return jsonResponse({ error: 'Error al subir video: ' + err.message }, 500);
+    console.error('[VIDEO] Error:', err);
+    return jsonResponse({ error: 'Error al guardar video' }, 500);
   }
 }
 
@@ -191,14 +105,6 @@ export async function onRequestDelete(context) {
   }
 
   try {
-    const recipe = await env.DB.prepare(
-      'SELECT video_url FROM recipes WHERE id = ?'
-    ).bind(id).first();
-
-    if (recipe && recipe.video_url) {
-      try { await env.IMAGES.delete(recipe.video_url); } catch (e) { /* ignore */ }
-    }
-
     await env.DB.prepare(
       'UPDATE recipes SET video_url = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
     ).bind(id).run();

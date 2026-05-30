@@ -510,10 +510,8 @@ function RecipeModal({ recipe, categories, onClose, onSave }) {
   const [recipeImages, setRecipeImages] = useState(recipe?.images || []);
   const [pendingImages, setPendingImages] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [videoPreview, setVideoPreview] = useState(recipe?.has_video ? 'Video cargado' : null);
-  const [videoFile, setVideoFile] = useState(null);
-  const [videoRemoved, setVideoRemoved] = useState(false);
-  const [videoUploading, setVideoUploading] = useState(false);
+  const [videoUrl, setVideoUrl] = useState(recipe?.video_url || '');
+  const [videoSaving, setVideoSaving] = useState(false);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -559,28 +557,25 @@ function RecipeModal({ recipe, categories, onClose, onSave }) {
     setPdfRemoved(true);
   };
 
-  const handleVideoChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (!['video/mp4', 'video/webm'].includes(file.type)) {
-      alert('Solo se permiten archivos MP4 o WebM');
-      e.target.value = '';
-      return;
+  const handleVideoSave = async () => {
+    if (!recipe?.id || !videoUrl.trim()) return;
+    setVideoSaving(true);
+    try {
+      const res = await fetch(`/api/recipes/${recipe.id}/video`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ youtubeUrl: videoUrl.trim() })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al guardar video');
+      setVideoUrl(data.video_url || videoUrl.trim());
+      alert('Video guardado correctamente');
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setVideoSaving(false);
     }
-    if (file.size > 200 * 1024 * 1024) {
-      alert('El video es demasiado grande (' + (file.size / 1024 / 1024).toFixed(1) + 'MB). El máximo es 200MB.');
-      e.target.value = '';
-      return;
-    }
-    setVideoFile(file);
-    setVideoPreview(null);
-    setVideoRemoved(false);
-  };
-
-  const removeVideo = () => {
-    setVideoFile(null);
-    setVideoPreview(null);
-    setVideoRemoved(true);
   };
 
   const handleImageUpload = async (e) => {
@@ -654,32 +649,6 @@ function RecipeModal({ recipe, categories, onClose, onSave }) {
     }
   };
 
-  const handleVideoUpload = async () => {
-    if (!recipe?.id || !videoFile) return;
-    setVideoUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append('video', videoFile);
-      const res = await fetch(`/api/recipes/${recipe.id}/video`, {
-        method: 'POST',
-        credentials: 'include',
-        body: fd
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error al subir video');
-      setVideoPreview(videoFile.name);
-      setVideoFile(null);
-      setVideoRemoved(false);
-      alert('Video subido correctamente');
-    } catch (err) {
-      alert(err.message);
-      setVideoPreview(recipe?.has_video ? 'Video cargado' : null);
-      setVideoFile(null);
-    } finally {
-      setVideoUploading(false);
-    }
-  };
-
   const handleVideoDelete = async () => {
     if (!recipe?.id) return;
     if (!confirm('¿Eliminar el video de esta receta?')) return;
@@ -690,9 +659,7 @@ function RecipeModal({ recipe, categories, onClose, onSave }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al eliminar');
-      setVideoPreview(null);
-      setVideoRemoved(true);
-      setVideoFile(null);
+      setVideoUrl('');
     } catch (err) {
       alert(err.message);
     }
@@ -708,9 +675,7 @@ function RecipeModal({ recipe, categories, onClose, onSave }) {
   }, [recipe]);
 
   useEffect(() => {
-    setVideoPreview(recipe?.has_video ? 'Video cargado' : null);
-    setVideoFile(null);
-    setVideoRemoved(false);
+    setVideoUrl(recipe?.video_url || '');
   }, [recipe?.id]);
 
   const allImages = recipeImages.map((url, i) => ({ url, isPending: false, index: i }));
@@ -826,42 +791,39 @@ function RecipeModal({ recipe, categories, onClose, onSave }) {
             <div className="form-group">
               <label>Video de la receta (solo visible post-pago)</label>
               {recipe?.id ? (
-                videoPreview ? (
-                  <div style={{border: '1px solid var(--line)', borderRadius: 12, padding: 16, background: '#faf8f7'}}>
-                    <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-                      <span style={{fontSize: 28}}>🎬</span>
-                      <div style={{flex: 1}}>
-                        <div style={{fontWeight: 500, fontSize: 14}}>{videoPreview}</div>
-                        <div style={{fontSize: 11, color: 'var(--ink-3)', marginTop: 2}}>MP4 / WebM · Almacenado en R2</div>
-                      </div>
-                      <button type="button" className="btn-danger-sm" onClick={handleVideoDelete}>✕ Quitar</button>
-                    </div>
+                <>
+                  <div style={{display: 'flex', gap: 8}}>
+                    <input
+                      type="url"
+                      placeholder="https://youtu.be/xxxx o https://youtube.com/watch?v=xxxx"
+                      value={videoUrl}
+                      onChange={e => setVideoUrl(e.target.value)}
+                      style={{flex: 1}}
+                    />
+                    <button
+                      type="button"
+                      className="btn-primary-sm"
+                      onClick={handleVideoSave}
+                      disabled={videoSaving || !videoUrl.trim()}
+                    >
+                      {videoSaving ? 'Guardando...' : recipe?.has_video ? 'Actualizar' : 'Guardar'}
+                    </button>
+                    {recipe?.has_video && (
+                      <button
+                        type="button"
+                        className="btn-danger-sm"
+                        onClick={handleVideoDelete}
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
-                ) : (
-                  <label className="pdf-upload-area" style={{padding: 20}}>
-                    <input type="file" accept="video/mp4,video/webm" onChange={handleVideoChange} />
-                    <div>
-                      <div style={{fontSize: 24, marginBottom: 6}}>🎬</div>
-                      {videoUploading ? <p>Subiendo...</p> : (
-                        <>
-                          <p>Click para subir video</p>
-                          <p style={{fontSize: 11, marginTop: 4}}>MP4 o WebM, máximo 200MB</p>
-                        </>
-                      )}
-                    </div>
-                  </label>
-                )
+                  <p style={{fontSize: 11, color: 'var(--ink-3)', marginTop: 4}}>Video alojado en YouTube (no listado)</p>
+                </>
               ) : (
                 <div style={{border: '1px dashed var(--line)', borderRadius: 12, padding: 16, textAlign: 'center', color: 'var(--ink-3)'}}>
                   <div style={{fontSize: 24, marginBottom: 6}}>🎬</div>
-                  <p>Guardá la receta primero para subir el video</p>
-                </div>
-              )}
-              {videoFile && !videoPreview && (
-                <div style={{marginTop: 10}}>
-                  <button type="button" className="btn-primary-sm" onClick={handleVideoUpload} disabled={videoUploading}>
-                    {videoUploading ? 'Subiendo...' : `Subir "${videoFile.name}"`}
-                  </button>
+                  <p>Guardá la receta primero para agregar el video</p>
                 </div>
               )}
             </div>
