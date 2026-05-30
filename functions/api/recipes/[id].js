@@ -44,7 +44,9 @@ export async function onRequestGet(context) {
   
   try {
     const recipe = await env.DB.prepare(
-      "SELECT * FROM recipes WHERE id = ? AND published = 1 AND deleted_at IS NULL"
+      `SELECT id, title, category, tag, time, level, price, description, content, image_url, label, photo_tone, published, images, created_at, updated_at, deleted_at,
+              CASE WHEN video_url IS NOT NULL THEN 1 ELSE 0 END as has_video
+       FROM recipes WHERE id = ? AND published = 1 AND deleted_at IS NULL`
     ).bind(id).first();
     
     if (!recipe) {
@@ -199,6 +201,10 @@ export async function onRequestDelete(context) {
 
         if (env.PDF_BUCKET && recipe.pdf_base64 === 'R2_STORED') {
           try { await env.PDF_BUCKET.delete(`recipe_pdfs/${id}.txt`); } catch (e) { /* ignore */ }
+        }
+
+        if (recipe.video_url) {
+          try { await env.IMAGES.delete(recipe.video_url); } catch (e) { /* ignore */ }
         }
       }
 

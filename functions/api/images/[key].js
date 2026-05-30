@@ -8,6 +8,11 @@ export async function onRequestGet(context) {
     return new Response('Not found', { status: 404 });
   }
 
+  // Block direct access to video files — videos are served via /api/recipes/:id/video
+  if (key.startsWith('recipe_videos/')) {
+    return new Response('Forbidden', { status: 403 });
+  }
+
   try {
     const object = await env.IMAGES.get(key);
 

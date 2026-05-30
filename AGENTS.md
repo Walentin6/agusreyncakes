@@ -36,6 +36,12 @@ No test suite — verify manually via `npm run dev` at `http://localhost:8788`.
 - **Admin recipe list does NOT include `pdf_base64`** — uses `has_pdf` (0/1) to avoid transferring all PDF data
 - **Email logic is in `functions/utils.js` → `sendRecipeEmail()`** — webhook and admin resend both use this shared function
 - **Recipe PUT only updates `pdf_base64` if explicitly sent** — omitting the field preserves existing PDF
+- **Videos are stored in R2 `IMAGES` bucket** (not a separate bucket), with key prefix `recipe_videos/{recipe_id}_{timestamp}.mp4`
+- **Video streaming requires purchase verification** — `/api/recipes/{id}/video` checks `orders.status = 'paid'` before serving the R2 object
+- **Video endpoint supports Range headers** (206 Partial Content) for browser seeking — parsed from `request.headers.get('Range')`
+- **MP4 direct streaming = 1 R2 read per view** — 80 videos at ~40MB each fits within 10GB free tier; reads scale linearly with views
+- **Max video upload size is 200MB** per file (admin endpoint); videos over 100MB may hit Pages Functions body limit in practice
+- **Video keys are blocked from `/api/images/[key]`** — direct R2 access via images endpoint returns 403 for keys starting with `recipe_videos/`. Videos must be served through the protected `/api/recipes/:id/video` endpoint
 
 ## Setup (manual, not automated)
 
@@ -62,6 +68,7 @@ No test suite — verify manually via `npm run dev` at `http://localhost:8788`.
 | `006_combos.sql` | combos table + combo_items |
 | `007_settings.sql` | settings table (key/value site config) |
 | `008_categories.sql` | categories table |
+| `009_videos.sql` | video_url column on recipes |
 
 ## Key Files
 
@@ -80,6 +87,7 @@ No test suite — verify manually via `npm run dev` at `http://localhost:8788`.
 | `functions/api/admin/trash.js` | Soft-delete management (list/restore/permanent delete) |
 | `functions/api/admin/combos.js` | Admin combo CRUD |
 | `functions/api/admin/settings.js` | Site settings CRUD |
+| `functions/api/recipes/[id]/video.js` | Protected video streaming (GET) + admin upload (POST/DELETE) |
 | `functions/api/auth/google.js` | Google OAuth initiate |
 | `functions/api/auth/callback.js` | Google OAuth callback (first user → admin) |
 | `functions/api/auth/login-email.js` | Email/password login |

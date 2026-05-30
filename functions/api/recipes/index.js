@@ -44,7 +44,7 @@ export async function onRequestGet(context) {
   const category = url.searchParams.get('category');
   
   try {
-    let query = "SELECT id, title, category, tag, time, level, price, description, image_url, label, photo_tone, images FROM recipes WHERE published = 1 AND deleted_at IS NULL";
+    let query = "SELECT id, title, category, tag, time, level, price, description, image_url, label, photo_tone, images, CASE WHEN video_url IS NOT NULL THEN 1 ELSE 0 END as has_video FROM recipes WHERE published = 1 AND deleted_at IS NULL";
     let bindings = [];
     
     if (category && category !== 'Todas') {

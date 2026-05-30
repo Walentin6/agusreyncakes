@@ -1469,6 +1469,7 @@ function Nav({ cartCount, onCart, menuOpen, setMenuOpen, user, onLogin, onLogout
           <li><a href="#recetas">Recetas</a></li>
           <li><a href="#sobre">Sobre mí</a></li>
           <li><a href="#combo">Combos</a></li>
+          {user?.purchasedRecipesWithVideo?.length > 0 && <li><a href="#mis-videos">Mis videos</a></li>}
           {user?.isAdmin && <li><a href="/admin">Admin</a></li>}
         </ul>
         <a href="#" className="brand">agustina<span className="dot">.</span></a>
@@ -1506,6 +1507,7 @@ function Nav({ cartCount, onCart, menuOpen, setMenuOpen, user, onLogin, onLogout
         <a href="#combo" onClick={() => setMenuOpen(false)}>Combos <em>·</em></a>
         {user?.isAdmin && <a href="/admin" onClick={() => setMenuOpen(false)}>Panel <em>Admin</em></a>}
         <a href="#mis-recetas" onClick={() => setMenuOpen(false)}>Mis <em>recetas</em></a>
+        {user?.purchasedRecipesWithVideo?.length > 0 && <a href="#mis-videos" onClick={() => setMenuOpen(false)}>Mis <em>videos</em></a>}
         {user ? (
           <a href="#" onClick={() => { setMenuOpen(false); onLogout(); }}>Cerrar <em>sesión</em></a>
         ) : (
@@ -1603,7 +1605,7 @@ function RecipeModal({ recipe, onClose, onAdd, user }) {
             </div>
             <div className="recipe-modal-meta-item">
               <span className="l">Formato</span>
-              <span className="v">PDF Descargable</span>
+              <span className="v">PDF Descargable{recipe.has_video ? ' + Video' : ''}</span>
             </div>
             </div>
   
@@ -1706,6 +1708,11 @@ function Recipes({ recipes, categories, onAdd, saved, onSave, onSelectRecipe, us
                 >
                   {saved.includes(r.id) ? "♥" : "♡"}
                 </button>
+                {r.has_video && (
+                  <div style={{ position: 'absolute', top: '14px', right: '14px', background: 'rgba(0,0,0,.6)', color: '#fff', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '500', backdropFilter: 'blur(4px)' }}>
+                    🎬 Video
+                  </div>
+                )}
                 {user?.purchasedRecipes?.includes(r.id) ? (
                   <div className="card-purchased-badge" style={{ position: 'absolute', bottom: '14px', right: '14px', background: 'var(--ink)', color: 'var(--cream)', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '500' }}>
                     Comprada
@@ -2189,6 +2196,11 @@ function AccountModal({ open, onClose, user, onLogout }) {
             <button className="account-btn account-btn-outline" onClick={() => { document.getElementById('mis-recetas')?.scrollIntoView({ behavior: 'smooth' }); onClose(); }}>
               Ver mis recetas
             </button>
+            {user.purchasedRecipesWithVideo?.length > 0 && (
+              <button className="account-btn account-btn-outline" onClick={() => { document.getElementById('mis-videos')?.scrollIntoView({ behavior: 'smooth' }); onClose(); }}>
+                Ver mis videos
+              </button>
+            )}
             {user.isAdmin && (
               <button className="account-btn account-btn-outline" onClick={() => { window.location.href = '/admin'; onClose(); }}>
                 Panel de admin
@@ -2309,10 +2321,11 @@ function OrderItems({ orderId, onResend, resending }) {
           <div key={i} style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--cream-2)', borderRadius: 6}}>
             <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
               <span style={{fontSize: 16}}>✿</span>
-              <div>
+                <div>
                 <div style={{fontWeight: 500, fontSize: 14}}>{item.recipe_title}</div>
                 <div style={{fontSize: 12, color: 'var(--ink-3)'}}>
                   {item.has_pdf ? 'PDF disponible' : 'Sin PDF'}
+                  {item.has_video ? ' · 🎬 Video disponible' : ''}
                 </div>
               </div>
             </div>
@@ -2329,6 +2342,85 @@ function OrderItems({ orderId, onResend, resending }) {
         {resending ? 'Enviando...' : 'Reenviar recetas por mail'} <span className="arr">→</span>
       </button>
     </div>
+  );
+}
+
+function MyVideos({ user, recipes }) {
+  const [playingId, setPlayingId] = useState(null);
+
+  if (!user || !user.purchasedRecipesWithVideo?.length) return null;
+
+  const videoRecipes = (recipes || []).filter(r =>
+    user.purchasedRecipesWithVideo?.includes(r.id)
+  );
+
+  return (
+    <>
+      <section id="mis-videos" className="my-recipes">
+        <div className="sec-head">
+          <div>
+            <div className="sec-eyebrow">— tu biblioteca</div>
+            <h2 className="sec-title">Mis <em>videos</em></h2>
+          </div>
+        </div>
+        {videoRecipes.length === 0 ? (
+          <div className="cart-empty">
+            <p>Todavía no tenés videos disponibles</p>
+            <span>Las recetas con video se muestran acá después de comprarlas ✿</span>
+          </div>
+        ) : (
+          <div className="grid" style={{gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20}}>
+            {videoRecipes.map(r => (
+              <article
+                key={r.id}
+                className="card"
+                style={{cursor: 'pointer'}}
+                onClick={() => setPlayingId(r.id)}
+              >
+                <div className="card-photo-wrap">
+                  <Photo tone={r.photo_tone} label={r.label} images={r.images || []} />
+                  <div style={{
+                    position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(0,0,0,.25)', borderRadius: 14
+                  }}>
+                    <div style={{
+                      width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,255,255,.9)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22
+                    }}>▶</div>
+                  </div>
+                </div>
+                <div className="card-meta">
+                  <h3 className="card-title">{r.title}</h3>
+                  <div className="card-sub">
+                    <span>{r.category}</span>
+                    <span className="dot-sep"></span>
+                    <span>Video</span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+      {playingId && (
+        <div className="modal-overlay" onClick={() => setPlayingId(null)}>
+          <div className="modal" style={{maxWidth: 800, width: '90vw'}} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{videoRecipes.find(r => r.id === playingId)?.title}</h3>
+              <button className="btn-ghost-sm" onClick={() => setPlayingId(null)}>✕</button>
+            </div>
+            <div style={{padding: 0, display: 'flex', justifyContent: 'center', background: '#000'}}>
+              <video
+                src={`/api/recipes/${playingId}/video`}
+                controls
+                autoPlay
+                style={{width: '100%', maxHeight: '70vh', display: 'block'}}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -2630,6 +2722,7 @@ function App() {
       <About />
       <Bundles onAdd={addToCart} />
       <MyRecipes user={user} setToast={setToast} />
+      <MyVideos user={user} recipes={recipes} />
       <FAQ />
       <Footer categories={categories} onLogin={handleLogin} onNavigateCategory={(cat) => {
         setActiveCategory(cat);

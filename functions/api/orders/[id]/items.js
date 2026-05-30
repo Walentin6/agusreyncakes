@@ -25,7 +25,8 @@ export async function onRequestGet(context) {
     const items = await env.DB.prepare(
       `SELECT oi.id, oi.order_id, oi.recipe_id, oi.recipe_title, oi.price,
               r.title as recipe_title,
-              CASE WHEN r.pdf_base64 IS NOT NULL THEN 1 ELSE 0 END as has_pdf
+               CASE WHEN r.pdf_base64 IS NOT NULL THEN 1 ELSE 0 END as has_pdf,
+               CASE WHEN r.video_url IS NOT NULL THEN 1 ELSE 0 END as has_video
        FROM order_items oi
        LEFT JOIN recipes r ON oi.recipe_id = r.id
        WHERE oi.order_id = ?`

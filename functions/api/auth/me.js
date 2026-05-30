@@ -19,6 +19,16 @@ export async function onRequestGet(context) {
     
     const purchasedRecipeIds = results.map(row => row.recipe_id);
 
+    // Check which purchased recipes have video
+    let recipesWithVideo = [];
+    if (purchasedRecipeIds.length > 0) {
+      const placeholders = purchasedRecipeIds.map(() => '?').join(',');
+      const videoResults = await env.DB.prepare(
+        `SELECT id FROM recipes WHERE id IN (${placeholders}) AND video_url IS NOT NULL`
+      ).bind(...purchasedRecipeIds).all();
+      recipesWithVideo = (videoResults.results || []).map(r => r.id);
+    }
+
     return jsonResponse({
       user: {
         id: data.session.userId,
@@ -26,7 +36,8 @@ export async function onRequestGet(context) {
         name: data.session.name,
         picture: data.session.picture,
         isAdmin: data.session.isAdmin === 1 || data.session.isAdmin === true,
-        purchasedRecipes: purchasedRecipeIds
+        purchasedRecipes: purchasedRecipeIds,
+        purchasedRecipesWithVideo: recipesWithVideo
       }
     });
   } catch (err) {
