@@ -1329,6 +1329,190 @@
     font-family: var(--sans); font-size: 12px;
     color: var(--ink-2); padding: 0; border-bottom: 1px solid var(--line);
   }
+
+  /* ---------- video section ---------- */
+  .video-card {
+    cursor: pointer;
+    transition: transform .35s ease;
+  }
+  .video-card:hover { transform: translateY(-4px); }
+  .video-card .card-photo-wrap .photo {
+    transition: transform .8s ease;
+  }
+  .video-card:hover .card-photo-wrap .photo { transform: scale(1.05); }
+  .video-card .card-photo-wrap {
+    overflow: visible;
+  }
+  .video-play-btn {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,.2);
+    border-radius: 6px;
+    transition: background .3s;
+  }
+  .video-card:hover .video-play-btn {
+    background: rgba(0,0,0,.35);
+  }
+  .video-play-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--ink);
+    box-shadow: 0 4px 24px rgba(0,0,0,.18);
+    transition: transform .25s ease, box-shadow .25s ease;
+  }
+  .video-card:hover .video-play-circle {
+    transform: scale(1.1);
+    box-shadow: 0 6px 32px rgba(0,0,0,.25);
+  }
+  @keyframes video-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,.4); }
+    50% { box-shadow: 0 0 0 12px rgba(255,255,255,0); }
+  }
+  .video-play-circle.pulse {
+    animation: video-pulse 2s ease-in-out infinite;
+  }
+  .video-card .card-title {
+    font-family: var(--serif);
+    font-size: 22px;
+    margin-top: 10px;
+    margin-bottom: 4px;
+  }
+  .video-card .card-sub {
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+
+  /* ---------- video modal ---------- */
+  .video-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: video-fade-in .3s ease;
+  }
+  @keyframes video-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .video-modal {
+    width: 90vw;
+    max-width: 900px;
+    background: var(--cream);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,.4);
+    animation: video-scale-in .35s ease;
+  }
+  @keyframes video-scale-in {
+    from { opacity: 0; transform: scale(.92) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .video-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  .video-modal-header h3 {
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 400;
+    color: var(--ink);
+    margin: 0;
+  }
+  .video-modal-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--ink-2);
+    transition: background .2s, color .2s;
+  }
+  .video-modal-close:hover {
+    background: var(--pink-1);
+    color: var(--rose);
+  }
+  .video-player-wrap {
+    background: #000;
+    aspect-ratio: 16/9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .video-player-wrap iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  /* ---------- video loader ---------- */
+  .video-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    color: var(--cream);
+  }
+  .video-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255,255,255,.15);
+    border-top-color: var(--pink-2);
+    border-radius: 50%;
+    animation: video-spin .8s linear infinite;
+  }
+  @keyframes video-spin {
+    to { transform: rotate(360deg); }
+  }
+  .video-loader span {
+    font-size: 13px;
+    letter-spacing: .06em;
+    opacity: .8;
+  }
+
+  /* ---------- video error ---------- */
+  .video-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: var(--cream);
+    text-align: center;
+    padding: 40px;
+  }
+  .video-error-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+  }
+  .video-error p {
+    font-size: 14px;
+    opacity: .8;
+    margin: 0;
+  }
 </style>
 </head>
 <body>
@@ -2349,6 +2533,7 @@ function MyVideos({ user, recipes }) {
   const [playingId, setPlayingId] = useState(null);
   const [embedUrl, setEmbedUrl] = useState(null);
   const [videoLoading, setVideoLoading] = useState(false);
+  const [videoError, setVideoError] = useState(false);
 
   if (!user || !user.purchasedRecipesWithVideo?.length) return null;
 
@@ -2360,17 +2545,26 @@ function MyVideos({ user, recipes }) {
     setPlayingId(id);
     setEmbedUrl(null);
     setVideoLoading(true);
+    setVideoError(false);
     try {
       const res = await fetch(`/api/recipes/${id}/video`, { credentials: 'include' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al cargar video');
       setEmbedUrl(data.embedUrl);
     } catch (err) {
-      alert(err.message);
+      setVideoError(true);
     } finally {
       setVideoLoading(false);
     }
   };
+
+  const closeVideo = () => {
+    setPlayingId(null);
+    setEmbedUrl(null);
+    setVideoError(false);
+  };
+
+  const activeRecipe = videoRecipes.find(r => r.id === playingId);
 
   return (
     <>
@@ -2387,24 +2581,17 @@ function MyVideos({ user, recipes }) {
             <span>Las recetas con video se muestran acá después de comprarlas ✿</span>
           </div>
         ) : (
-          <div className="grid" style={{gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20}}>
+          <div className="grid" style={{gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 24}}>
             {videoRecipes.map(r => (
               <article
                 key={r.id}
-                className="card"
-                style={{cursor: 'pointer'}}
+                className="video-card"
                 onClick={() => openVideo(r.id)}
               >
                 <div className="card-photo-wrap">
                   <Photo tone={r.photo_tone} label={r.label} images={r.images || []} />
-                  <div style={{
-                    position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'rgba(0,0,0,.25)', borderRadius: 14
-                  }}>
-                    <div style={{
-                      width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,255,255,.9)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22
-                    }}>▶</div>
+                  <div className="video-play-btn">
+                    <div className="video-play-circle pulse">▶</div>
                   </div>
                 </div>
                 <div className="card-meta">
@@ -2421,29 +2608,30 @@ function MyVideos({ user, recipes }) {
         )}
       </section>
       {playingId && (
-        <div className="modal-overlay" onClick={() => { setPlayingId(null); setEmbedUrl(null); }}>
-          <div className="modal" style={{maxWidth: 800, width: '90vw'}} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{videoRecipes.find(r => r.id === playingId)?.title}</h3>
-              <button className="btn-ghost-sm" onClick={() => { setPlayingId(null); setEmbedUrl(null); }}>✕</button>
+        <div className="video-modal-overlay" onClick={closeVideo}>
+          <div className="video-modal" onClick={e => e.stopPropagation()}>
+            <div className="video-modal-header">
+              <h3>{activeRecipe?.title}</h3>
+              <button className="video-modal-close" onClick={closeVideo}>✕</button>
             </div>
-            <div style={{padding: 0, display: 'flex', justifyContent: 'center', background: '#000', aspectRatio: '16/9'}}>
+            <div className="video-player-wrap">
               {videoLoading ? (
-                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', color: '#fff'}}>
-                  Cargando video...
+                <div className="video-loader">
+                  <div className="video-spinner" />
+                  <span>Cargando video...</span>
+                </div>
+              ) : videoError ? (
+                <div className="video-error">
+                  <div className="video-error-icon">⚠</div>
+                  <p>No se pudo cargar el video</p>
                 </div>
               ) : embedUrl ? (
                 <iframe
                   src={embedUrl}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
-                  style={{width: '100%', height: '100%', border: 'none'}}
                 />
-              ) : (
-                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', color: '#fff'}}>
-                  No se pudo cargar el video
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
