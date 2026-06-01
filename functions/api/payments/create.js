@@ -75,7 +75,7 @@ export async function onRequestPost(context) {
       for (const item of comboItems) {
         await env.DB.prepare(
           'INSERT INTO order_items (order_id, recipe_id, recipe_title, price) VALUES (?, ?, ?, ?)'
-        ).bind(orderId, item.id, item.title, item.price);
+        ).bind(orderId, item.id, item.title, item.price).run();
       }
 
       // Create MP preference for combo

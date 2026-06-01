@@ -123,7 +123,7 @@ export function validatePdfBase64(base64, hasR2 = false) {
   return { valid: true, clean };
 }
 
-function buildRecipeEmailHtml(order, recipesWithPdf, recipesWithoutPdf) {
+function buildRecipeEmailHtml(order, recipesWithPdf, recipesVideoOnly, recipesNoPdfNoVideo, siteUrl) {
   return `
 <!DOCTYPE html>
 <html>
@@ -141,6 +141,9 @@ function buildRecipeEmailHtml(order, recipesWithPdf, recipesWithoutPdf) {
     .recipe-item { padding: 16px; background: #FAF5EF; border-radius: 8px; margin-bottom: 12px; }
     .recipe-item .name { font-size: 16px; font-weight: 600; color: #3D2E2A; }
     .recipe-item .pdf-badge { display: inline-block; margin-top: 6px; font-size: 11px; color: #2E7D32; background: #E8F5E9; padding: 3px 8px; border-radius: 4px; }
+    .recipe-item .video-badge { display: inline-block; margin-top: 6px; font-size: 11px; color: #1565C0; background: #E3F2FD; padding: 3px 8px; border-radius: 4px; }
+    .video-note { background: #EDE7F6; padding: 14px; border-radius: 8px; margin-top: 4px; color: #4527A0; font-size: 13px; }
+    .video-note a { color: #4527A0; }
     .warning { background: #FFF3E0; padding: 14px; border-radius: 8px; color: #EF6C00; font-size: 13px; margin-top: 16px; }
     .footer { text-align: center; margin-top: 32px; color: #9A8880; font-size: 12px; }
   </style>
@@ -166,10 +169,25 @@ function buildRecipeEmailHtml(order, recipesWithPdf, recipesWithoutPdf) {
     </div>
     ` : ''}
 
-    ${recipesWithoutPdf.length > 0 ? `
+    ${recipesVideoOnly.length > 0 ? `
+    <div class="recipes">
+      <p style="font-weight: 600; color: #3D2E2A; margin-bottom: 12px;">Recetas con video:</p>
+      ${recipesVideoOnly.map(item => `
+        <div class="recipe-item">
+          <div class="name">🎬 ${item.recipe_title || 'Receta'}</div>
+          <div class="video-badge">▶ Video disponible en el sitio</div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="video-note">
+      Para ver tus videos, ingresá a <a href="${siteUrl}">${siteUrl}</a> con tu cuenta y buscá la sección <strong>"Mis videos"</strong>.
+    </div>
+    ` : ''}
+
+    ${recipesNoPdfNoVideo.length > 0 ? `
     <div class="warning">
       ⚠️ Las siguientes recetas no tienen PDF adjunto. Contactá a Agustina para recibir tu receta.
-      <br/><strong>${recipesWithoutPdf.join(', ')}</strong>
+      <br/><strong>${recipesNoPdfNoVideo.join(', ')}</strong>
     </div>
     ` : ''}
 
@@ -195,7 +213,7 @@ export async function sendRecipeEmail(env, orderId) {
   }
 
   const orderItems = await env.DB.prepare(
-    `SELECT oi.*, r.pdf_base64, r.title as recipe_title
+    `SELECT oi.*, r.pdf_base64, r.title as recipe_title, r.video_url
      FROM order_items oi
      LEFT JOIN recipes r ON oi.recipe_id = r.id
      WHERE oi.order_id = ?`
@@ -205,7 +223,8 @@ export async function sendRecipeEmail(env, orderId) {
 
   const attachments = [];
   const recipesWithPdf = [];
-  const recipesWithoutPdf = [];
+  const recipesVideoOnly = [];
+  const recipesNoPdfNoVideo = [];
 
   for (const i of items) {
     let pdfData = null;
@@ -233,8 +252,10 @@ export async function sendRecipeEmail(env, orderId) {
         content_type: 'application/pdf',
         contentType: 'application/pdf'
       });
+    } else if (i.video_url) {
+      recipesVideoOnly.push(i);
     } else {
-      recipesWithoutPdf.push(i.recipe_title || 'Receta');
+      recipesNoPdfNoVideo.push(i.recipe_title || 'Receta');
     }
   }
 
@@ -244,8 +265,9 @@ export async function sendRecipeEmail(env, orderId) {
   }
 
   const fromEmail = env.RESEND_FROM_EMAIL || 'Agustina Reynoso <noreply@agusreyncakes.com>';
+  const siteUrl = env.SITE_URL || 'https://agusreyncakes.com';
 
-  const htmlBody = buildRecipeEmailHtml(order, recipesWithPdf, recipesWithoutPdf);
+  const htmlBody = buildRecipeEmailHtml(order, recipesWithPdf, recipesVideoOnly, recipesNoPdfNoVideo, siteUrl);
 
   const payload = {
     from: fromEmail,
@@ -275,6 +297,6 @@ export async function sendRecipeEmail(env, orderId) {
     'UPDATE orders SET email_sent_at = ? WHERE id = ?'
   ).bind(new Date().toISOString(), orderId).run();
 
-  console.log(`[SEND-RECIPE] Email sent for order ${orderId} to ${order.user_email}, attachments: ${attachments.length}`);
-  return { sent: true, messageId: emailResult.id, attachmentsSent: attachments.length, recipesWithoutPdf: recipesWithoutPdf.length };
+  console.log(`[SEND-RECIPE] Email sent for order ${orderId} to ${order.user_email}, attachments: ${attachments.length}, videoOnly: ${recipesVideoOnly.length}`);
+  return { sent: true, messageId: emailResult.id, attachmentsSent: attachments.length, videoOnly: recipesVideoOnly.length, recipesWithoutPdf: recipesNoPdfNoVideo.length };
 }
