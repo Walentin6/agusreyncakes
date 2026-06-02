@@ -112,11 +112,17 @@ export async function onRequestPost(context) {
         body: JSON.stringify(preferenceData)
       });
 
+      console.log('MP_ACCESS_TOKEN present:', !!env.MP_ACCESS_TOKEN);
+      console.log('MP_ACCESS_TOKEN starts with:', env.MP_ACCESS_TOKEN?.substring(0, 8));
+      console.log('Preference data:', JSON.stringify(preferenceData));
+
       const mpData = await mpResponse.json();
 
       if (!mpResponse.ok) {
         console.error('Mercado Pago error:', mpData);
-        return jsonResponse({ error: 'Payment provider error' }, 500);
+        console.error('Mercado Pago status:', mpResponse.status);
+        console.error('Mercado Pago response body:', JSON.stringify(mpData));
+        return jsonResponse({ error: 'Payment provider error', details: mpData.message || mpData.cause }, 500);
       }
 
       await env.DB.prepare(
@@ -211,11 +217,17 @@ export async function onRequestPost(context) {
       body: JSON.stringify(preferenceData)
     });
     
+    console.log('MP_ACCESS_TOKEN present:', !!env.MP_ACCESS_TOKEN);
+    console.log('MP_ACCESS_TOKEN starts with:', env.MP_ACCESS_TOKEN?.substring(0, 8));
+    console.log('Preference data:', JSON.stringify(preferenceData));
+    
     const mpData = await mpResponse.json();
     
     if (!mpResponse.ok) {
       console.error('Mercado Pago error:', mpData);
-      return jsonResponse({ error: 'Payment provider error' }, 500);
+      console.error('Mercado Pago status:', mpResponse.status);
+      console.error('Mercado Pago response body:', JSON.stringify(mpData));
+      return jsonResponse({ error: 'Payment provider error', details: mpData.message || mpData.cause }, 500);
     }
     
     // Update order with preference ID
