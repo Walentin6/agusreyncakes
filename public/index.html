@@ -1789,7 +1789,11 @@ function RecipeModal({ recipe, onClose, onAdd, user }) {
             </div>
             <div className="recipe-modal-meta-item">
               <span className="l">Formato</span>
-              <span className="v">PDF Descargable{recipe.has_video ? ' + Video' : ''}</span>
+              <span className="v">
+                {recipe.has_pdf && recipe.has_video ? 'PDF + Video' : 
+                 recipe.has_pdf ? 'PDF Descargable' : 
+                 recipe.has_video ? 'Video' : 'Próximamente'}
+              </span>
             </div>
             </div>
   

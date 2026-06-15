@@ -44,7 +44,7 @@ export async function onRequestGet(context) {
   const category = url.searchParams.get('category');
   
   try {
-    let query = "SELECT id, title, category, tag, time, level, price, description, image_url, label, photo_tone, images, CASE WHEN video_url IS NOT NULL THEN 1 ELSE 0 END as has_video FROM recipes WHERE published = 1 AND deleted_at IS NULL";
+    let query = "SELECT id, title, category, tag, time, level, price, description, image_url, label, photo_tone, images, CASE WHEN video_url IS NOT NULL THEN 1 ELSE 0 END as has_video, CASE WHEN pdf_base64 IS NOT NULL THEN 1 ELSE 0 END as has_pdf FROM recipes WHERE published = 1 AND deleted_at IS NULL";
     let bindings = [];
     
     if (category && category !== 'Todas') {
@@ -134,7 +134,7 @@ export async function onRequestPost(context) {
     // Handle images sent as base64 in the payload (for new recipes)
     const imageUrls = [];
     if (Array.isArray(body.images) && body.images.length > 0 && env.IMAGES) {
-      const baseUrl = env.SITE_URL || 'https://agusreyncakes.com';
+      const baseUrl = env.SITE_URL || 'https://agusreyncakes.com.ar';
       const MAX_IMAGES = 5;
       const MAX_FILE_SIZE = 25 * 1024 * 1024;
       const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm', 'video/quicktime'];
