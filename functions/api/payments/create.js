@@ -32,7 +32,7 @@ export async function onRequestPost(context) {
         SELECT DISTINCT oi.recipe_id
         FROM order_items oi
         JOIN orders o ON oi.order_id = o.id
-        WHERE o.user_id = ? AND o.status = 'paid'
+        WHERE o.user_id = ? AND o.status = 'paid' AND o.deleted_at IS NULL
       `).bind(data.session.userId).all();
 
       const purchasedIds = results.map(r => Number(r.recipe_id));
@@ -153,7 +153,7 @@ export async function onRequestPost(context) {
       SELECT DISTINCT oi.recipe_id
       FROM order_items oi
       JOIN orders o ON oi.order_id = o.id
-      WHERE o.user_id = ? AND o.status = 'paid'
+      WHERE o.user_id = ? AND o.status = 'paid' AND o.deleted_at IS NULL
     `).bind(data.session.userId).all();
 
     const purchasedIds = results.map(r => Number(r.recipe_id));

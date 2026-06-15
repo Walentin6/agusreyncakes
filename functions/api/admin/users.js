@@ -15,7 +15,7 @@ export async function onRequestGet(context) {
     
     const users = await env.DB.prepare(
       `SELECT id, email, name, picture, is_admin, created_at,
-              (SELECT COUNT(*) FROM orders WHERE user_id = users.id) as order_count
+              (SELECT COUNT(*) FROM orders WHERE user_id = users.id AND deleted_at IS NULL) as order_count
        FROM users
        ORDER BY created_at DESC
        LIMIT ? OFFSET ?`

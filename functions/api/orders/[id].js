@@ -12,7 +12,7 @@ export async function onRequestGet(context) {
   try {
     // Get order
     const order = await env.DB.prepare(
-      'SELECT * FROM orders WHERE id = ? AND user_id = ?'
+      'SELECT * FROM orders WHERE id = ? AND user_id = ? AND deleted_at IS NULL'
     ).bind(id, data.session.userId).first();
     
     if (!order) {

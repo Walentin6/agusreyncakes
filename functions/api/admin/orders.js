@@ -20,11 +20,12 @@ export async function onRequestGet(context) {
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.id
       LEFT JOIN order_items oi ON o.id = oi.order_id
+      WHERE o.deleted_at IS NULL
     `;
     let bindings = [];
-    
+
     if (status) {
-      query += ' WHERE o.status = ?';
+      query += ' AND o.status = ?';
       bindings.push(status);
     }
     

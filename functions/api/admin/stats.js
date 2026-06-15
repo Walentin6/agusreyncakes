@@ -26,14 +26,14 @@ export async function onRequestGet(context) {
     
     // Total orders
     const ordersCount = await env.DB.prepare(
-      'SELECT COUNT(*) as count FROM orders'
+      'SELECT COUNT(*) as count FROM orders WHERE deleted_at IS NULL'
     ).first();
-    
+
     // Total revenue (paid orders)
     const revenue = await env.DB.prepare(
-      'SELECT COALESCE(SUM(total), 0) as total FROM orders WHERE status = "paid"'
+      'SELECT COALESCE(SUM(total), 0) as total FROM orders WHERE status = "paid" AND deleted_at IS NULL'
     ).first();
-    
+
     // Recent orders
     const recentOrders = await env.DB.prepare(
       `SELECT o.*, u.name as user_name, u.email as user_email,
@@ -41,14 +41,15 @@ export async function onRequestGet(context) {
        FROM orders o
        LEFT JOIN users u ON o.user_id = u.id
        LEFT JOIN order_items oi ON o.id = oi.order_id
+       WHERE o.deleted_at IS NULL
        GROUP BY o.id
        ORDER BY o.created_at DESC
        LIMIT 10`
     ).all();
-    
+
     // Orders by status
     const ordersByStatus = await env.DB.prepare(
-      'SELECT status, COUNT(*) as count FROM orders GROUP BY status'
+      'SELECT status, COUNT(*) as count FROM orders WHERE deleted_at IS NULL GROUP BY status'
     ).all();
     
     return jsonResponse({

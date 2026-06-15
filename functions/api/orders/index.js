@@ -10,11 +10,11 @@ export async function onRequestGet(context) {
   
   try {
     const orders = await env.DB.prepare(
-      `SELECT o.*, COUNT(oi.id) as item_count 
-       FROM orders o 
-       LEFT JOIN order_items oi ON o.id = oi.order_id 
-       WHERE o.user_id = ? 
-       GROUP BY o.id 
+      `SELECT o.*, COUNT(oi.id) as item_count
+       FROM orders o
+       LEFT JOIN order_items oi ON o.id = oi.order_id
+       WHERE o.user_id = ? AND o.deleted_at IS NULL
+       GROUP BY o.id
        ORDER BY o.created_at DESC`
     ).bind(data.session.userId).all();
     

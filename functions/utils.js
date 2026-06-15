@@ -164,6 +164,7 @@ function buildRecipeEmailHtml(order, recipesWithPdf, recipesVideoOnly, recipesNo
         <div class="recipe-item">
           <div class="name">📄 ${item.recipe_title || 'Receta'}</div>
           <div class="pdf-badge">✓ PDF adjunto en este email</div>
+          ${item.video_url ? `<div style="margin-top:6px;"><a href="${item.video_url}" style="color:#1565C0;font-size:13px;">🔗 Ver video en YouTube</a></div>` : ''}
         </div>
       `).join('')}
     </div>
@@ -176,6 +177,7 @@ function buildRecipeEmailHtml(order, recipesWithPdf, recipesVideoOnly, recipesNo
         <div class="recipe-item">
           <div class="name">🎬 ${item.recipe_title || 'Receta'}</div>
           <div class="video-badge">▶ Video disponible en el sitio</div>
+          ${item.video_url ? `<div style="margin-top:6px;"><a href="${item.video_url}" style="color:#1565C0;font-size:13px;">🔗 Ver video en YouTube</a></div>` : ''}
         </div>
       `).join('')}
     </div>
@@ -246,6 +248,7 @@ export async function sendRecipeEmail(env, orderId) {
 
     if (pdfData) {
       recipesWithPdf.push(i);
+      if (i.video_url) recipesVideoOnly.push(i);
       attachments.push({
         filename: `${(i.recipe_title || 'receta').replace(/[^a-zA-Z0-9._-]/g, '_')}.pdf`,
         content: pdfData,
@@ -265,7 +268,7 @@ export async function sendRecipeEmail(env, orderId) {
   }
 
   const fromEmail = env.RESEND_FROM_EMAIL || 'Agustina Reynoso <noreply@agusreyncakes.com>';
-  const siteUrl = env.SITE_URL || 'https://agusreyncakes.com';
+  const siteUrl = env.SITE_URL || 'https://agusreyncakes.com.ar';
 
   const htmlBody = buildRecipeEmailHtml(order, recipesWithPdf, recipesVideoOnly, recipesNoPdfNoVideo, siteUrl);
 

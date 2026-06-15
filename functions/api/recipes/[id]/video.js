@@ -39,7 +39,7 @@ export async function onRequestGet(context) {
     const purchase = await env.DB.prepare(`
       SELECT 1 FROM order_items oi
       JOIN orders o ON oi.order_id = o.id
-      WHERE o.user_id = ? AND oi.recipe_id = ? AND o.status = 'paid'
+      WHERE o.user_id = ? AND oi.recipe_id = ? AND o.status = 'paid' AND o.deleted_at IS NULL
       LIMIT 1
     `).bind(data.session.userId, id).first();
 

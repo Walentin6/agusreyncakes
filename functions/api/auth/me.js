@@ -11,10 +11,10 @@ export async function onRequestGet(context) {
   try {
     // Get purchased recipes
     const { results } = await env.DB.prepare(`
-      SELECT DISTINCT oi.recipe_id 
+      SELECT DISTINCT oi.recipe_id
       FROM order_items oi
       JOIN orders o ON oi.order_id = o.id
-      WHERE o.user_id = ? AND o.status = 'paid'
+      WHERE o.user_id = ? AND o.status = 'paid' AND o.deleted_at IS NULL
     `).bind(data.session.userId).all();
     
     const purchasedRecipeIds = results.map(row => row.recipe_id);

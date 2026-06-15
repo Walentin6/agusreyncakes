@@ -18,7 +18,7 @@ export async function onRequestPost(context) {
     // Verify ownership: non-admin users can only resend their own orders
     if (!data.session.isAdmin) {
       const order = await env.DB.prepare(
-        'SELECT id, status FROM orders WHERE id = ? AND user_id = ?'
+        'SELECT id, status FROM orders WHERE id = ? AND user_id = ? AND deleted_at IS NULL'
       ).bind(orderId, data.session.userId).first();
 
       if (!order) {

@@ -1529,6 +1529,7 @@ function OrdersAdmin() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
   const [detailOrder, setDetailOrder] = useState(null);
+  const [cleanupDays, setCleanupDays] = useState(7);
 
   const loadOrders = () => {
     const url = statusFilter ? `/api/admin/orders?status=${statusFilter}` : '/api/admin/orders';
@@ -1547,6 +1548,19 @@ function OrdersAdmin() {
     loadOrders();
   };
 
+  const handleDelete = async (orderId) => {
+    if (!confirm('¿Eliminar este pedido?')) return;
+    await api(`/api/admin/orders/${orderId}`, { method: 'DELETE' });
+    loadOrders();
+  };
+
+  const handleCleanup = async () => {
+    if (!confirm(`¿Eliminar todos los pedidos pending/failed con más de ${cleanupDays} días?`)) return;
+    const data = await api(`/api/admin/orders/cleanup?days=${cleanupDays}`, { method: 'DELETE' });
+    alert(`${data.deletedCount} pedidos eliminados`);
+    loadOrders();
+  };
+
   useEffect(() => { loadOrders(); }, [statusFilter]);
 
   if (loading) return <div className="loading">Cargando...</div>;
@@ -1555,16 +1569,31 @@ function OrdersAdmin() {
     <div>
       <div className="main-header">
         <h1>Pedidos</h1>
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          style={{padding: '8px 14px', borderRadius: 8, border: '1px solid var(--line)', background: '#fff'}}
-        >
-          <option value="">Todos los estados</option>
-          <option value="pending">Pendiente</option>
-          <option value="paid">Pagado</option>
-          <option value="failed">Fallido</option>
-        </select>
+        <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            style={{padding: '8px 14px', borderRadius: 8, border: '1px solid var(--line)', background: '#fff'}}
+          >
+            <option value="">Todos los estados</option>
+            <option value="pending">Pendiente</option>
+            <option value="paid">Pagado</option>
+            <option value="failed">Fallido</option>
+          </select>
+          <select
+            value={cleanupDays}
+            onChange={e => setCleanupDays(Number(e.target.value))}
+            style={{padding: '8px 14px', borderRadius: 8, border: '1px solid var(--line)', background: '#fff'}}
+          >
+            <option value={3}>3 días</option>
+            <option value={7}>7 días</option>
+            <option value={14}>14 días</option>
+            <option value={30}>30 días</option>
+          </select>
+          <button className="btn-ghost" onClick={handleCleanup} style={{color: '#C62828', borderColor: '#C62828'}}>
+            Limpiar antiguos
+          </button>
+        </div>
       </div>
       <table className="data-table">
         <thead>
@@ -1609,6 +1638,9 @@ function OrdersAdmin() {
               <td>
                 <div style={{display: 'flex', gap: 6}}>
                   <button className="btn-ghost-sm" onClick={() => setDetailOrder(o)}>Ver</button>
+                  {o.status !== 'paid' && (
+                    <button className="btn-ghost-sm" onClick={() => handleDelete(o.id)} style={{color: '#C62828', borderColor: '#C62828'}}>Eliminar</button>
+                  )}
                 </div>
               </td>
             </tr>

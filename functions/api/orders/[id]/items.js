@@ -14,7 +14,7 @@ export async function onRequestGet(context) {
     // Verify ownership: non-admin users can only view their own orders
     if (!data.session.isAdmin) {
       const order = await env.DB.prepare(
-        'SELECT id FROM orders WHERE id = ? AND user_id = ?'
+        'SELECT id FROM orders WHERE id = ? AND user_id = ? AND deleted_at IS NULL'
       ).bind(orderId, data.session.userId).first();
 
       if (!order) {
