@@ -1922,6 +1922,8 @@ function Recipes({ recipes, categories, onAdd, saved, onSave, onSelectRecipe, us
                   <span>{r.time}</span>
                   <span className="dot-sep"></span>
                   <span>{r.level}</span>
+                  <span className="dot-sep"></span>
+                  <span>{r.has_pdf && r.has_video ? 'PDF + Video' : r.has_pdf ? 'PDF' : r.has_video ? 'Video' : ''}</span>
                 </div>
               </div>
               <div className="card-price">{ARS(r.price)}</div>

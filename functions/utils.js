@@ -164,7 +164,6 @@ function buildRecipeEmailHtml(order, recipesWithPdf, recipesVideoOnly, recipesNo
         <div class="recipe-item">
           <div class="name">📄 ${item.recipe_title || 'Receta'}</div>
           <div class="pdf-badge">✓ PDF adjunto en este email</div>
-          ${item.video_url ? `<div style="margin-top:6px;"><a href="${item.video_url}" style="color:#1565C0;font-size:13px;">🔗 Ver video en YouTube</a></div>` : ''}
         </div>
       `).join('')}
     </div>
