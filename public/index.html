@@ -2415,7 +2415,7 @@ function MyRecipes({ user, setToast }) {
   useEffect(() => {
     if (!user) return;
     api('/api/orders')
-      .then(data => setOrders(data.orders || []))
+      .then(data => setOrders((data.orders || []).filter(o => o.status === 'paid')))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [user]);
